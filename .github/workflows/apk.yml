@@ -11,6 +11,18 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - marca: rede
+            arquivo: RedeCheiaVolei
+            tag: v1
+            titulo: Rede Cheia Vôlei
+          - marca: liga
+            arquivo: LigaDaJusticaVolei
+            tag: liga-v1
+            titulo: Liga da Justiça Vôlei
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +34,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Aplicar versão da marca
+        if: matrix.marca != 'rede'
+        run: python3 brand/${{ matrix.marca }}/apply.py
 
       - name: Instalar Capacitor
         run: npm install
@@ -44,16 +60,17 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../RedeCheiaVolei.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../${{ matrix.arquivo }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RedeCheiaVolei-apk
-          path: RedeCheiaVolei.apk
+          name: ${{ matrix.arquivo }}-apk
+          path: ${{ matrix.arquivo }}.apk
 
       - name: Publicar para download
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.${{ github.run_number }}
-          name: Rede Cheia Vôlei v1.${{ github.run_number }}
-          files: RedeCheiaVolei.apk
+          tag_name: ${{ matrix.tag }}.${{ github.run_number }}
+          name: ${{ matrix.titulo }} ${{ matrix.tag }}.${{ github.run_number }}
+          files: ${{ matrix.arquivo }}.apk
+          make_latest: ${{ matrix.marca == 'rede' }}
