@@ -189,12 +189,16 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
 <!-- LOGIN -->
 <div class="screen auth" id="s-auth" hidden>
   <div><div class="brand">Rede <span>Cheia</span></div><div class="sub">O vôlei do seu time, organizado</div></div>
-  <form id="authForm">
-    <input type="email" id="aEmail" placeholder="E-mail" autocomplete="email" required>
-    <input type="password" id="aPass" placeholder="Senha (mínimo 6 caracteres)" autocomplete="current-password" minlength="6" required>
+  <div class="seg" id="authMode" style="align-self:stretch;display:grid;grid-template-columns:1fr 1fr">
+    <button type="button" data-mode="entrar" aria-pressed="true">Já tenho conta</button>
+    <button type="button" data-mode="criar" aria-pressed="false">Criar conta</button>
+  </div>
+  <form id="authForm" novalidate>
+    <input type="email" id="aEmail" placeholder="E-mail" autocomplete="email">
+    <input type="password" id="aPass" placeholder="Senha (mínimo 6 caracteres)" autocomplete="current-password">
+    <input type="password" id="aPass2" placeholder="Repita a senha" autocomplete="new-password" hidden>
     <div class="err" id="aErr"></div>
-    <button class="btn primary" type="submit" id="aLogin">Entrar</button>
-    <button class="btn" type="button" id="aSignup">Criar conta</button>
+    <button class="btn primary" type="submit" id="aGo">Entrar</button>
     <button class="btn ghost" type="button" id="aReset">Esqueci a senha</button>
   </form>
   <div class="or">ou</div>
@@ -444,10 +448,22 @@ const stopAll=()=>{unsubs.forEach(u=>u());unsubs=[]};
 
 /* ---------------- Login ---------------- */
 const authMsg=e=>({"auth/invalid-credential":"E-mail ou senha incorretos.","auth/email-already-in-use":"Esse e-mail já tem conta. Use Entrar.","auth/weak-password":"A senha precisa de pelo menos 6 caracteres.","auth/invalid-email":"E-mail inválido.","auth/popup-blocked":"O navegador bloqueou a janela do Google. Use e-mail e senha.","auth/network-request-failed":"Sem internet. Confira a conexão."}[e.code]||"Não deu certo: "+(e.code||e.message));
-$("#authForm").addEventListener("submit",async e=>{e.preventDefault();$("#aErr").textContent="";
-  try{await signInWithEmailAndPassword(auth,$("#aEmail").value.trim(),$("#aPass").value)}catch(err){$("#aErr").textContent=authMsg(err)}});
-$("#aSignup").onclick=async()=>{$("#aErr").textContent="";if(!$("#authForm").reportValidity())return;
-  try{await createUserWithEmailAndPassword(auth,$("#aEmail").value.trim(),$("#aPass").value)}catch(err){$("#aErr").textContent=authMsg(err)}};
+let authMode="entrar";
+function setMode(m){authMode=m;$("#aErr").textContent="";
+  document.querySelectorAll("#authMode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  $("#aPass2").hidden=m!=="criar";$("#aReset").hidden=m==="criar";
+  $("#aPass").autocomplete=m==="criar"?"new-password":"current-password";
+  $("#aGo").textContent=m==="criar"?"Criar minha conta":"Entrar"}
+$("#authMode").addEventListener("click",e=>{const b=e.target.closest("button");if(b)setMode(b.dataset.mode)});
+$("#authForm").addEventListener("submit",async e=>{e.preventDefault();
+  const em=$("#aEmail").value.trim(),pw=$("#aPass").value;$("#aErr").textContent="";
+  if(!/^\S+@\S+\.\S+$/.test(em)){$("#aErr").textContent="Digite um e-mail válido.";return}
+  if(pw.length<6){$("#aErr").textContent="A senha precisa de pelo menos 6 caracteres.";return}
+  if(authMode==="criar"&&pw!==$("#aPass2").value){$("#aErr").textContent="As duas senhas não são iguais.";return}
+  const b=$("#aGo"),txt=b.textContent;b.disabled=true;b.textContent=authMode==="criar"?"Criando conta…":"Entrando…";
+  try{if(authMode==="criar")await createUserWithEmailAndPassword(auth,em,pw);else await signInWithEmailAndPassword(auth,em,pw)}
+  catch(err){$("#aErr").textContent=(authMode==="entrar"&&err.code==="auth/invalid-credential")?"E-mail ou senha incorretos. Se ainda não tem conta, toque em Criar conta.":authMsg(err)}
+  b.disabled=false;b.textContent=txt});
 $("#aReset").onclick=async()=>{const em=$("#aEmail").value.trim();if(!em){$("#aErr").textContent="Digite seu e-mail acima e toque de novo.";return}
   try{await sendPasswordResetEmail(auth,em);$("#aErr").textContent="";toast("Enviamos um e-mail para trocar a senha")}catch(err){$("#aErr").textContent=authMsg(err)}};
 if(window.Capacitor?.isNativePlatform?.()){$("#aGoogle").hidden=true;document.querySelector(".or").hidden=true}
