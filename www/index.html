@@ -135,8 +135,35 @@ section.view{display:flex;flex-direction:column;gap:14px}
 .tier-craque .st span,.tier-craque .sub,.tier-craque .foot{text-shadow:0 0 .6cqw rgba(20,10,80,.9)}
 .tier-ouro .ovr{text-shadow:0 .5cqw 0 rgba(255,255,255,.35),0 0 3cqw rgba(255,240,180,.8)}
 @media (prefers-reduced-motion:reduce){.card .aura,.card .rays,.card .spark,.card .frame,.tier-craque .face::after{animation:none!important}.card .spark{opacity:.8}}
+
+/* partículas subindo */
+.card .pt{display:none;position:absolute;z-index:2;bottom:-4%;width:2.2cqw;aspect-ratio:1;border-radius:50%;background:#fff;pointer-events:none;opacity:0;animation:rise 3.2s linear infinite}
+.tier-ouro .pt,.tier-craque .pt{display:block}
+.tier-ouro .pt{background:#fff6c8;box-shadow:0 0 2cqw 1cqw rgba(255,215,90,.9)}
+.tier-craque .pt{background:#e8fbff;box-shadow:0 0 2cqw 1cqw rgba(140,230,255,.95)}
+.card .pt.p1{left:12%;animation-delay:0s}.card .pt.p2{left:30%;animation-delay:1.1s;width:1.6cqw}
+.card .pt.p3{left:48%;animation-delay:2.2s}.card .pt.p4{left:66%;animation-delay:.5s;width:1.6cqw}
+.card .pt.p5{left:82%;animation-delay:1.6s}.card .pt.p6{left:22%;animation-delay:2.7s;width:1.4cqw}
+@keyframes rise{0%{transform:translate(0,0);opacity:0}10%{opacity:1}50%{transform:translate(3cqw,-55cqw)}85%{opacity:.8}100%{transform:translate(-2cqw,-115cqw);opacity:0}}
+/* facetas de diamante */
+.tier-craque .tex{background-image:
+  repeating-linear-gradient(60deg,rgba(255,255,255,.14) 0 .4cqw,transparent .4cqw 9cqw),
+  repeating-linear-gradient(-60deg,rgba(255,255,255,.14) 0 .4cqw,transparent .4cqw 9cqw),
+  linear-gradient(115deg,transparent 20%,rgba(255,120,220,.35) 35%,rgba(120,255,230,.35) 50%,rgba(255,240,120,.3) 65%,transparent 80%)!important;
+  background-size:auto,auto,250% 250%!important;animation:holo3 5s linear infinite!important}
+@keyframes holo3{to{background-position:0 0,0 0,250% 250%}}
+/* inclinação ao tocar */
+.card{transform-style:preserve-3d;transition:transform .25s ease-out}
+.card.tilt{transition:transform .05s linear}
+.mycard .card .glare{opacity:.45}
+.card .glare{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .3s;
+  clip-path:polygon(50% 0,100% 5.5%,100% 87%,50% 100%,0 87%,0 5.5%);
+  background:radial-gradient(circle at var(--gx,50%) var(--gy,30%),rgba(255,255,255,.55),transparent 45%)}
+.card.tilt .glare{opacity:1}
+.tier-craque .glare{background:radial-gradient(circle at var(--gx,50%) var(--gy,30%),rgba(255,255,255,.6),rgba(255,140,230,.25) 25%,rgba(120,230,255,.2) 40%,transparent 55%)}
+@media (prefers-reduced-motion:reduce){.card .pt{animation:none;opacity:0}}
 /* variações de tamanho */
-.card.mini .stats,.card.mini .foot,.card.mini .sub,.card.mini .num,.card.mini .court{display:none}
+.card.mini .stats,.card.mini .foot,.card.mini .sub,.card.mini .num,.card.mini .court,.card.mini .pt.p5,.card.mini .pt.p6{display:none}
 .card.mini .photo{width:56%;margin-top:34%}
 .card.mini .name{font-size:13cqw}
 .card.mini .plate{margin-top:7%}
@@ -517,16 +544,30 @@ const barCor=v=>v>=85?"#1fae6a":v>=75?"#5cc94a":v>=65?"#e3b21c":v>=50?"#e07a1f":
 const sigla=n=>String(n||"").trim().split(/\s+/).filter(w=>w.length>2||/^[A-Z0-9]/.test(w)).map(w=>w[0]).slice(0,3).join("").toUpperCase()||"RC";
 function cardHTML(p,extra=""){const o=ovr(p),t=tier(o);
   return `<button type="button" class="card tier-${t} ${extra}" data-id="${p.id}" aria-label="${esc(p.nome)}, nota ${o}">
-   <div class="aura"></div><div class="frame"></div><div class="face"><div class="tex"></div><div class="rays"></div><div class="court"></div><div class="shine"></div><i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i><i class="spark s4"></i><i class="spark s5"></i>
+   <div class="aura"></div><div class="frame"></div><div class="face"><div class="tex"></div><div class="rays"></div><div class="court"></div><div class="shine"></div><i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i><i class="spark s4"></i><i class="spark s5"></i><i class="pt p1"></i><i class="pt p2"></i><i class="pt p3"></i><i class="pt p4"></i><i class="pt p5"></i><i class="pt p6"></i>
    <div class="ovr">${o}<small>${p.pos}</small><i></i></div>
    <div class="crest">${esc(sigla(team?.nome))}</div><div class="gen">${p.genero==="F"?"♀":"♂"}</div><div class="num">${p.numero?"#"+esc(p.numero):""}</div>
    <div class="photo">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</div>
    <div class="plate"><div class="name">${esc(p.nome)}</div><div class="sub">${POSN[p.pos]||p.pos}</div></div>
    <div class="stats">${ATTR.map((a,i)=>{const v=p.attrs[i];return `<div class="st"><b>${v}</b><span>${a[0]}</span><em style="--v:${v}%;--bar:${barCor(v)}"></em></div>`}).join("")}</div>
-   <div class="foot">${BALL}${p.tipo==="mensal"?"Mensalista":"Avulso"} · ${TIERN[t]}</div></div></button>`}
+   <div class="glare"></div><div class="foot">${BALL}${p.tipo==="mensal"?"Mensalista":"Avulso"} · ${TIERN[t]}</div></div></button>`}
 function fotoDe(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=220;c.width=c.height=s;const m=Math.min(img.width,img.height);c.getContext("2d").drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,s,s);res(c.toDataURL("image/jpeg",.82))};img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
 function novoCodigo(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";const r=crypto.getRandomValues(new Uint8Array(6));r.forEach(x=>s+=a[x%a.length]);return s}
 
+/* inclinação das cartas ao tocar/arrastar */
+(function(){let cur=null;
+  const move=e=>{if(!cur)return;const r=cur.getBoundingClientRect();const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    cur.style.transform=`perspective(700px) rotateY(${(x-.5)*22}deg) rotateX(${(.5-y)*22}deg) scale(1.03)`;
+    cur.style.setProperty("--gx",(x*100)+"%");cur.style.setProperty("--gy",(y*100)+"%")};
+  const end=()=>{if(!cur)return;cur.classList.remove("tilt");cur.style.transform="";cur=null};
+  document.addEventListener("pointerdown",e=>{const c=e.target.closest(".mycard .card,.preview .card");if(!c)return;cur=c;c.classList.add("tilt");move(e)});
+  document.addEventListener("pointermove",move,{passive:true});
+  ["pointerup","pointercancel","pointerleave"].forEach(t=>document.addEventListener(t,end));
+  if(!matchMedia("(prefers-reduced-motion:reduce)").matches){let t=0;(function idle(){t+=.02;
+    document.querySelectorAll(".mycard .card:not(.tilt)").forEach(c=>{c.style.transform=`perspective(700px) rotateY(${Math.sin(t)*7}deg) rotateX(${Math.cos(t*.8)*4}deg)`;
+      c.style.setProperty("--gx",(50+Math.sin(t)*40)+"%");c.style.setProperty("--gy",(30+Math.cos(t*.8)*20)+"%")});
+    requestAnimationFrame(idle)})()}
+})();
 /* ---------------- Estado ---------------- */
 let user=null,teamId=null,me=null,team=null,players=[],members=[],unsubs=[],filter="todos",view=null;
 const gestor=()=>GESTORES.includes(me?.papel);
