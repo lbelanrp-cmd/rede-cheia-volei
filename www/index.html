@@ -41,29 +41,73 @@ h2{font-family:var(--f-display);font-weight:800;font-size:22px;text-transform:up
 section.view{display:flex;flex-direction:column;gap:14px}
 
 /* ---------- Cartas ---------- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
-.card{--t1:#e9c25a;--t2:#a8781c;--ink:#2a1a00;position:relative;aspect-ratio:3/4.3;max-width:100%;border:0;padding:0;background:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45));transition:transform .15s}
+.card{--t1:#ffe08a;--t2:#c98f16;--t3:#7a5208;--ink:#2a1a00;--ink2:rgba(42,26,0,.6);--glow:rgba(255,200,80,.55);
+  position:relative;aspect-ratio:3/4.75;width:100%;max-width:100%;border:0;padding:0;background:none;color:var(--ink);
+  container-type:inline-size;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5));transition:transform .15s;font-family:var(--f-display)}
 .card:active{transform:scale(.97)}
-.card .face{position:absolute;inset:0;clip-path:polygon(50% 0,100% 7%,100% 84%,50% 100%,0 84%,0 7%);background:linear-gradient(155deg,var(--t1) 0%,var(--t2) 55%,var(--t1) 100%);color:var(--ink);display:flex;flex-direction:column;align-items:center;padding:12% 9% 14%;overflow:hidden}
-.card .face::before{content:"";position:absolute;inset:4px;clip-path:inherit;border:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.12) 0 2px,transparent 2px 9px);pointer-events:none}
-.card .face::after{content:"";position:absolute;left:-40%;top:-20%;width:60%;height:140%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:rotate(18deg);pointer-events:none}
-.tier-bronze{--t1:#d49a6a;--t2:#7e4a26;--ink:#2b1608}
-.tier-prata{--t1:#e3e8ef;--t2:#8d98a8;--ink:#141b26}
-.tier-ouro{--t1:#ffe08a;--t2:#c98f16;--ink:#2a1a00}
-.tier-craque{--t1:#7fd3ff;--t2:#2347b8;--ink:#fff}
-.card .ovr{position:absolute;left:11%;top:11%;font-family:var(--f-display);font-weight:900;font-size:clamp(26px,9vw,38px);line-height:.85;text-align:center;z-index:1}
-.card .ovr small{display:block;font-size:.42em;font-weight:800;letter-spacing:.05em}
-.card .gender{position:absolute;right:12%;top:12%;font-size:11px;font-weight:700;z-index:1;opacity:.85}
-.card .photo{width:56%;aspect-ratio:1;border-radius:50%;margin-top:6%;background:rgba(0,0,0,.18);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:30px;overflow:hidden;z-index:1;border:2px solid rgba(255,255,255,.35)}
+.card .frame,.card .face{position:absolute;clip-path:polygon(50% 0,100% 5.5%,100% 87%,50% 100%,0 87%,0 5.5%)}
+.card .frame{inset:0;background:linear-gradient(160deg,var(--t1),var(--t3) 45%,var(--t1) 70%,var(--t3))}
+.card .face{inset:2.4cqw;background:linear-gradient(170deg,var(--t1) 0%,var(--t2) 58%,var(--t3) 100%);display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.card .tex{position:absolute;inset:0;pointer-events:none;opacity:.55}
+.card .shine{position:absolute;top:-30%;left:-60%;width:45%;height:160%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:rotate(20deg);pointer-events:none}
+.card .court{position:absolute;left:8%;right:8%;top:18%;height:36%;border:.6cqw solid var(--ink2);border-top:0;opacity:.18;pointer-events:none}
+.card .court::before{content:"";position:absolute;left:0;right:0;top:33%;border-top:.6cqw solid currentColor}
+.card .court::after{content:"";position:absolute;top:0;bottom:0;left:50%;border-left:.6cqw dashed currentColor}
+/* topo */
+.card .ovr{position:absolute;left:9%;top:9%;text-align:center;line-height:.82;z-index:2;font-weight:900;font-size:16cqw;text-shadow:0 .6cqw 0 rgba(255,255,255,.25)}
+.card .ovr small{display:block;font-size:7cqw;font-weight:800;letter-spacing:.06em;margin-top:1.5cqw}
+.card .ovr i{display:block;width:70%;margin:1.8cqw auto 0;border-top:.5cqw solid var(--ink2)}
+.card .crest{position:absolute;right:9%;top:10%;z-index:2;width:15cqw;aspect-ratio:1/1.12;display:grid;place-items:center;font-weight:900;font-size:6cqw;letter-spacing:.02em;
+  clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);background:var(--ink);color:var(--t1)}
+.card .gen{position:absolute;right:11.5%;top:27%;z-index:2;font-size:7cqw;font-weight:800;opacity:.8}
+.card .num{position:absolute;right:10%;top:34%;z-index:2;font-size:8cqw;font-weight:900;opacity:.85}
+.card .num:empty{display:none}
+/* foto */
+.card .photo{position:relative;z-index:1;width:42%;aspect-ratio:1;border-radius:50%;margin-top:19%;display:grid;place-items:center;font-weight:900;font-size:17cqw;overflow:hidden;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.35),rgba(0,0,0,.18));box-shadow:0 0 0 1.2cqw var(--t1),0 0 0 2.2cqw var(--ink2),0 0 6cqw var(--glow)}
 .card .photo img{width:100%;height:100%;object-fit:cover}
-.card .name{font-family:var(--f-display);font-weight:800;font-size:clamp(15px,4.4vw,19px);text-transform:uppercase;line-height:1;margin-top:6%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;z-index:1;border-bottom:1px solid currentColor;padding-bottom:3px;opacity:.95}
-.card .stats{display:grid;grid-template-columns:1fr 1fr;column-gap:12%;row-gap:1px;margin-top:5%;font-family:var(--f-display);font-size:13px;z-index:1;width:84%}
-.card .stats div{display:flex;gap:4px;justify-content:space-between}
-.card .stats b{font-weight:900;font-variant-numeric:tabular-nums}
-.card .type{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;z-index:1;opacity:.75}
-.card.mini{aspect-ratio:3/4.1}
+/* nome */
+.card .plate{position:relative;z-index:1;margin-top:6%;width:86%;text-align:center}
+.card .name{font-weight:900;font-size:10cqw;text-transform:uppercase;line-height:1;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .sub{display:flex;align-items:center;justify-content:center;gap:2cqw;margin-top:1.5cqw;font-size:5cqw;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+.card .sub::before,.card .sub::after{content:"";flex:1;border-top:.5cqw solid var(--ink2)}
+/* atributos */
+.card .stats{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;column-gap:7cqw;row-gap:2cqw;width:80%;margin-top:5%}
+.card .st{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:2cqw}
+.card .st b{font-weight:900;font-size:8cqw;font-variant-numeric:tabular-nums;line-height:1}
+.card .st span{font-weight:700;font-size:5.4cqw;letter-spacing:.05em;color:var(--ink2)}
+.card .st em{grid-column:1/-1;height:1.1cqw;border-radius:2cqw;background:rgba(0,0,0,.18);overflow:hidden;margin-top:.8cqw}
+.card .st em::after{content:"";display:block;height:100%;width:var(--v);background:var(--bar)}
+/* rodapé */
+.card .foot{position:absolute;bottom:8.5%;left:50%;transform:translateX(-50%);z-index:1;display:flex;align-items:center;gap:1.5cqw;font-size:4.4cqw;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);white-space:nowrap}
+.card .foot svg{width:5cqw;height:5cqw}
+/* níveis */
+.tier-bronze{--t1:#e3ad7e;--t2:#a8683a;--t3:#5c3317;--ink:#2b1608;--ink2:rgba(43,22,8,.62);--glow:rgba(227,140,80,.35)}
+.tier-bronze .tex{background:repeating-linear-gradient(0deg,rgba(255,255,255,.08) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 2px,transparent 2px 7px)}
+.tier-prata{--t1:#f4f7fb;--t2:#aab4c3;--t3:#5d6878;--ink:#121925;--ink2:rgba(18,25,37,.6);--glow:rgba(220,235,255,.5)}
+.tier-prata .tex{background:repeating-linear-gradient(135deg,rgba(255,255,255,.22) 0 2px,transparent 2px 9px)}
+.tier-ouro{--t1:#fff0b0;--t2:#e0a526;--t3:#7a5208;--ink:#2a1a00;--ink2:rgba(42,26,0,.62);--glow:rgba(255,205,80,.7)}
+.tier-ouro .tex{background:repeating-conic-gradient(from 0deg at 50% 22%,rgba(255,255,255,.22) 0 4deg,transparent 4deg 12deg)}
+.tier-craque{--t1:#a9f0ff;--t2:#3a5fe0;--t3:#1b1466;--ink:#fff;--ink2:rgba(255,255,255,.72);--glow:rgba(120,220,255,.85)}
+.tier-craque .face{background:linear-gradient(170deg,#7fe3ff 0%,#3a5fe0 45%,#5b2bb8 75%,#1b1466 100%)}
+.tier-craque .tex{opacity:.7;background:
+  radial-gradient(circle at 20% 30%,rgba(255,255,255,.9) 0 .5cqw,transparent .8cqw),radial-gradient(circle at 80% 18%,rgba(255,255,255,.8) 0 .4cqw,transparent .7cqw),
+  radial-gradient(circle at 70% 60%,rgba(255,255,255,.7) 0 .4cqw,transparent .7cqw),radial-gradient(circle at 15% 75%,rgba(255,255,255,.7) 0 .4cqw,transparent .7cqw),
+  linear-gradient(115deg,transparent 20%,rgba(255,120,220,.35) 35%,rgba(120,255,230,.35) 50%,rgba(255,240,120,.3) 65%,transparent 80%);background-size:auto,auto,auto,auto,250% 250%;animation:holo 5s linear infinite}
+.tier-craque .frame{background:linear-gradient(160deg,#e9fbff,#5b2bb8 40%,#7fe3ff 70%,#1b1466)}
+.tier-craque .crest{background:#fff;color:#2a1f8a}
+@keyframes holo{to{background-position:0 0,0 0,0 0,0 0,250% 250%}}
+.card .shine{animation:shine 4.5s ease-in-out infinite}
+@keyframes shine{0%,60%{left:-60%}100%{left:130%}}
+@media (prefers-reduced-motion:reduce){.card .shine,.tier-craque .tex{animation:none}}
+/* variações de tamanho */
+.card.mini .stats,.card.mini .foot,.card.mini .sub,.card.mini .num,.card.mini .court{display:none}
+.card.mini .photo{width:56%;margin-top:34%}
+.card.mini .name{font-size:13cqw}
+.card.mini .plate{margin-top:7%}
 .card.off{opacity:.38;filter:grayscale(.8)}
-.addcard{aspect-ratio:3/4.3;border:2px dashed var(--line);border-radius:14px;background:transparent;color:var(--muted);display:grid;place-items:center;font-weight:600;text-align:center;padding:10px}
+
+.addcard{aspect-ratio:3/4.75;border:2px dashed var(--line);border-radius:14px;background:transparent;color:var(--muted);display:grid;place-items:center;font-weight:600;text-align:center;padding:10px}
 .addcard span{display:block;font-family:var(--f-display);font-size:44px;color:var(--accent);line-height:1}
 
 /* ---------- Presença ---------- */
@@ -93,11 +137,6 @@ section.view{display:flex;flex-direction:column;gap:14px}
 .team .meta{font-size:12px;color:var(--muted);text-align:right}
 .team .meta b{font-family:var(--f-display);font-size:22px;color:var(--fg);font-variant-numeric:tabular-nums}
 .team .grid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
-.team .card .stats{display:none}
-.team .card .type{display:none}
-.team .card .photo{width:62%;font-size:24px}
-.team .card .name{font-size:14px}
-.team .card .ovr{font-size:28px}
 .bench{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:12px}
 
 /* ---------- Placar ---------- */
@@ -131,7 +170,7 @@ section.view{display:flex;flex-direction:column;gap:14px}
 .modal{position:fixed;inset:0;background:rgba(5,8,14,.75);display:flex;align-items:flex-end;justify-content:center;z-index:40}
 .sheet{background:var(--panel);border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92%;overflow:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
 .sheet .preview{display:flex;justify-content:center}
-.sheet .preview .card{width:150px}
+.sheet .preview .card{width:180px}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
 input[type=text],select{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--fg);font:inherit;width:100%}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -175,9 +214,6 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
 .tabs button{font-size:11px}
 .mycard{display:flex;justify-content:center}
 .mycard .card{width:min(260px,70vw)}
-.mycard .card .stats{font-size:17px}
-.mycard .card .name{font-size:24px}
-.mycard .card .ovr{font-size:50px}
 .toggle[disabled]{cursor:default}
 .pts[disabled],.minus[disabled]{cursor:default}
 .empty{text-align:center;color:var(--muted);padding:24px 10px}
@@ -370,7 +406,10 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
       <label class="f">Sexo<select id="fGender"><option value="M">Masculino</option><option value="F">Feminino</option></select></label>
       <label class="f">Posição<select id="fPos"><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
     </div>
-    <label class="f">Tipo<select id="fType"><option value="mensal">Mensalista</option><option value="avulso">Avulso</option></select></label>
+    <div class="two">
+      <label class="f">Tipo<select id="fType"><option value="mensal">Mensalista</option><option value="avulso">Avulso</option></select></label>
+      <label class="f">Nº da camisa<input type="text" id="fNum" inputmode="numeric" maxlength="2" placeholder="Opcional"></label>
+    </div>
     <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600">Foto do jogador
       <div class="photoRow">
         <label class="btn primary pbtn" for="fCam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Tirar foto</label>
@@ -437,13 +476,19 @@ const TEAMC=["#ffb21f","#3f8cff","#3ccf8e","#ff6b5a","#b98cff","#4fd6e0"];
 const ovr=p=>{const w=W[p.pos]||W.PON;let s=0,t=0;p.attrs.forEach((v,i)=>{s+=v*w[i];t+=w[i]});return Math.round(s/t)};
 const tier=o=>o>=85?"craque":o>=75?"ouro":o>=65?"prata":"bronze";
 const initials=n=>String(n||"?").trim().split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
-function cardHTML(p,extra=""){const o=ovr(p);
-  return `<button type="button" class="card tier-${tier(o)} ${extra}" data-id="${p.id}" aria-label="${esc(p.nome)}, nota ${o}"><div class="face">
-   <div class="ovr">${o}<small>${p.pos}</small></div><div class="gender">${p.genero==="F"?"♀":"♂"}</div>
+const BALL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3.5 9c5 2 12 2 17 0M5 17c4-3 10-3 14 0"/></svg>';
+const TIERN={bronze:"Bronze",prata:"Prata",ouro:"Ouro",craque:"Craque"};
+const barCor=v=>v>=85?"#1fae6a":v>=75?"#5cc94a":v>=65?"#e3b21c":v>=50?"#e07a1f":"#d6453a";
+const sigla=n=>String(n||"").trim().split(/\s+/).filter(w=>w.length>2||/^[A-Z0-9]/.test(w)).map(w=>w[0]).slice(0,3).join("").toUpperCase()||"RC";
+function cardHTML(p,extra=""){const o=ovr(p),t=tier(o);
+  return `<button type="button" class="card tier-${t} ${extra}" data-id="${p.id}" aria-label="${esc(p.nome)}, nota ${o}">
+   <div class="frame"></div><div class="face"><div class="tex"></div><div class="court"></div><div class="shine"></div>
+   <div class="ovr">${o}<small>${p.pos}</small><i></i></div>
+   <div class="crest">${esc(sigla(team?.nome))}</div><div class="gen">${p.genero==="F"?"♀":"♂"}</div><div class="num">${p.numero?"#"+esc(p.numero):""}</div>
    <div class="photo">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</div>
-   <div class="name">${esc(p.nome)}</div>
-   <div class="stats">${ATTR.map((a,i)=>`<div><b>${p.attrs[i]}</b><span>${a[0]}</span></div>`).join("")}</div>
-   <div class="type">${p.tipo==="mensal"?"Mensalista":"Avulso"}</div></div></button>`}
+   <div class="plate"><div class="name">${esc(p.nome)}</div><div class="sub">${POSN[p.pos]||p.pos}</div></div>
+   <div class="stats">${ATTR.map((a,i)=>{const v=p.attrs[i];return `<div class="st"><b>${v}</b><span>${a[0]}</span><em style="--v:${v}%;--bar:${barCor(v)}"></em></div>`}).join("")}</div>
+   <div class="foot">${BALL}${p.tipo==="mensal"?"Mensalista":"Avulso"} · ${TIERN[t]}</div></div></button>`}
 function fotoDe(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=220;c.width=c.height=s;const m=Math.min(img.width,img.height);c.getContext("2d").drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,s,s);res(c.toDataURL("image/jpeg",.82))};img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
 function novoCodigo(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";const r=crypto.getRandomValues(new Uint8Array(6));r.forEach(x=>s+=a[x%a.length]);return s}
 
@@ -611,10 +656,10 @@ $("#filterRow").addEventListener("click",e=>{const b=e.target.closest(".chip");i
 let editing=null,draft=null;
 $("#sliders").innerHTML=ATTR.map((a,i)=>`<label class="sl" title="${a[1]}"><span>${a[0]}</span><input type="range" min="30" max="99" id="fa${i}" aria-label="${a[1]}"><output id="fo${i}"></output></label>`).join("");
 function openModal(id){if(!gestor())return;
-  editing=id;const p=id?byId(id):{nome:"",genero:"M",pos:"PON",tipo:"avulso",attrs:[60,60,60,60,60,60],foto:"",presente:false};
+  editing=id;const p=id?byId(id):{nome:"",genero:"M",pos:"PON",tipo:"avulso",numero:"",attrs:[60,60,60,60,60,60],foto:"",presente:false};
   draft=JSON.parse(JSON.stringify(p));delete draft.id;
   $("#mTitle").textContent=id?"Editar carta":"Novo jogador";
-  $("#fName").value=draft.nome;$("#fGender").value=draft.genero;$("#fPos").value=draft.pos;$("#fType").value=draft.tipo;
+  $("#fName").value=draft.nome;$("#fGender").value=draft.genero;$("#fPos").value=draft.pos;$("#fType").value=draft.tipo;$("#fNum").value=draft.numero||"";
   draft.attrs.forEach((v,i)=>{$("#fa"+i).value=v;$("#fo"+i).textContent=v});
   $("#mDelete").hidden=!id;$("#mConfirm").hidden=true;$("#linkBox").hidden=!id;$("#mInvOut").innerHTML="";
   if(id){const m=members.find(x=>x.carta===id);
@@ -622,7 +667,7 @@ function openModal(id){if(!gestor())return;
     $("#mInvite").hidden=!!m;}
   renderPreview();$("#modal").hidden=false;
 }
-function renderPreview(){draft.nome=$("#fName").value||"Nome";draft.genero=$("#fGender").value;draft.pos=$("#fPos").value;draft.tipo=$("#fType").value;
+function renderPreview(){draft.nome=$("#fName").value||"Nome";draft.genero=$("#fGender").value;draft.pos=$("#fPos").value;draft.tipo=$("#fType").value;draft.numero=$("#fNum").value.replace(/\D/g,"");
   $("#mPreview").innerHTML=cardHTML({...draft,id:"prev"})}
 $("#pform").addEventListener("input",e=>{const m=e.target.id.match(/^fa(\d)$/);if(m){draft.attrs[+m[1]]=+e.target.value;$("#fo"+m[1]).textContent=e.target.value}if(e.target.type!=="file")renderPreview()});
 ["#fCam","#fPhoto"].forEach(sel=>$(sel).addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
@@ -631,7 +676,7 @@ $("#fNoPhoto").onclick=()=>{draft.foto="";renderPreview()};
 $("#mPreview").addEventListener("click",e=>{if(e.target.closest(".photo"))$("#fCam").click()});
 $("#pform").addEventListener("submit",async e=>{e.preventDefault();renderPreview();draft.nome=$("#fName").value.trim();if(!draft.nome)return;
   $("#mSave").disabled=true;
-  try{if(editing)await updateDoc(pRef(editing),{nome:draft.nome,genero:draft.genero,pos:draft.pos,tipo:draft.tipo,attrs:draft.attrs,foto:draft.foto||""});
+  try{if(editing)await updateDoc(pRef(editing),{nome:draft.nome,genero:draft.genero,pos:draft.pos,tipo:draft.tipo,numero:draft.numero||"",attrs:draft.attrs,foto:draft.foto||""});
     else await addDoc(collection(db,"times",teamId,"jogadores"),{...draft,foto:draft.foto||"",presente:false});
     closeModal();toast("Carta salva")}catch(err){toast("Não consegui salvar: "+(err.code||""))}
   $("#mSave").disabled=false});
