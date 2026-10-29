@@ -10,14 +10,14 @@ def rep(a, b, count=1):
     assert n >= 1, f"não achei: {a[:60]}"
     s = s.replace(a, b) if count == 0 else s.replace(a, b, count)
 
-rep('<meta name="theme-color" content="#0d1420">', '<meta name="theme-color" content="#0c0b24">')
+rep('<meta name="theme-color" content="#0d1420">', '<meta name="theme-color" content="#08080b">')
 rep('<title>Rede Cheia Vôlei</title>', '<title>Liga da Justiça Vôlei</title>')
 rep('--bg:#0d1420; --panel:#151f30; --panel-2:#1c2940; --line:#2a3a56;',
-    '--bg:#0c0b24; --panel:#16143a; --panel-2:#1f1c4d; --line:#332f72;')
+    '--bg:#08080b; --panel:#15131a; --panel-2:#1f1b25; --line:#3a3343;')
 rep('--fg:#eef2f8; --muted:#8fa0bb; --accent:#ffb21f; --accent-2:#3f8cff;',
-    '--fg:#f2f0ff; --muted:#a7a3d8; --accent:#7fe3ff; --accent-2:#8a5cff; --accent-3:#ff8ae6;')
-rep('color:#1a1200', 'color:#120f3a', 0)
-rep('rgba(13,20,32,.94)', 'rgba(12,11,36,.94)', 0)
+    '--fg:#ffffff; --muted:#b9b1c2; --accent:#e8197d; --accent-2:#2fbfa8; --accent-3:#e8197d;')
+rep('color:#1a1200', 'color:#ffffff', 0)
+rep('rgba(13,20,32,.94)', 'rgba(8,8,11,.95)', 0)
 s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="brand">Liga <span>da Justiça</span></div>')
 rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Liga <span>da Justiça</span></div>')
 rep('O vôlei do seu time, organizado', 'O vôlei da Liga, organizado')
@@ -25,12 +25,29 @@ rep('pelo app Rede Cheia Vôlei', 'pelo app Liga da Justiça Vôlei')
 rep('placeholder="Nome do time"', 'placeholder="Nome do time" value="Liga da Justiça"')
 # identidade visual extra: fundo com brilho e título em degradê
 extra = '''
-body{background:radial-gradient(120% 60% at 50% -10%,rgba(138,92,255,.28),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(255,138,230,.14),transparent 60%),var(--bg);background-attachment:fixed}
-.brand{background:linear-gradient(100deg,#ffffff 0%,#7fe3ff 40%,#ff8ae6 75%,#8a5cff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.brand span{color:transparent}
-.btn.primary{background:linear-gradient(100deg,#7fe3ff,#b9a4ff 60%,#ff8ae6);border-color:transparent}
-.tabs button[aria-current="page"]{color:#7fe3ff}
-.team{border-top-color:var(--tc)}
+body{background:radial-gradient(90% 45% at 0% 0%,rgba(232,25,125,.22),transparent 60%),radial-gradient(90% 45% at 100% 100%,rgba(47,191,168,.18),transparent 60%),var(--bg);background-attachment:fixed}
+.brand{color:#fff;text-shadow:2px 2px 0 #e8197d,-2px -2px 0 #2fbfa8;letter-spacing:.03em}
+.brand span{color:#fff}
+.btn.primary{background:#e8197d;border-color:#e8197d;color:#fff}
+.chip[aria-pressed="true"],.seg button[aria-pressed="true"]{background:#2fbfa8;border-color:#2fbfa8;color:#04201b}
+.tabs{border-top:2px solid #e8197d}
+.tabs button[aria-current="page"]{color:#2fbfa8}
+.toggle.on{background:rgba(47,191,168,.15);border-color:#2fbfa8;color:#2fbfa8}
+.notice{border-color:#2fbfa8}
+.notice svg{color:#2fbfa8}
+/* carta Diamante nas cores da Liga */
+.tier-craque{--glow:rgba(232,25,125,.8)}
+.tier-craque .face{background:linear-gradient(165deg,#2fbfa8 0%,#127a6c 38%,#a3105a 70%,#e8197d 100%)!important}
+.tier-craque .frame{background:linear-gradient(110deg,#ffffff,#e8197d 18%,#2fbfa8 36%,#ffffff 54%,#e8197d 72%,#2fbfa8 90%)!important;background-size:250% 100%!important}
+.tier-craque .crest{background:#fff;color:#e8197d}
+.tier-craque .face::after{opacity:.08!important}
+.tier-craque .rays{opacity:.45}
+.tier-craque .tex{opacity:.4!important}
+.tier-craque .st span,.tier-craque .sub,.tier-craque .foot{color:rgba(255,255,255,.85)!important;text-shadow:0 0 .6cqw rgba(0,0,0,.9)!important}
+.tier-craque .aura{background:radial-gradient(closest-side,rgba(232,25,125,.8),rgba(47,191,168,.45),transparent)!important}
+.tier-craque .pt{box-shadow:0 0 2cqw 1cqw rgba(232,25,125,.9)!important}
+.tier-craque .spark{background:linear-gradient(135deg,#fff,#c8fff4 40%,#ffc0dd)!important}
+.tier-craque .ovr,.tier-craque .name,.tier-craque .st b{text-shadow:0 0 .6cqw rgba(0,0,0,.85),0 0 3cqw rgba(232,25,125,.7)!important}
 '''
 rep('</style>', extra + '</style>')
 open(p, "w", encoding="utf-8").write(s)
