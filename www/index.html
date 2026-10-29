@@ -100,6 +100,41 @@ section.view{display:flex;flex-direction:column;gap:14px}
 .card .shine{animation:shine 4.5s ease-in-out infinite}
 @keyframes shine{0%,60%{left:-60%}100%{left:130%}}
 @media (prefers-reduced-motion:reduce){.card .shine,.tier-craque .tex{animation:none}}
+
+/* ---------- Efeitos ouro e diamante ---------- */
+.card .aura{position:absolute;inset:-3%;border-radius:30%;pointer-events:none;opacity:0;z-index:-1}
+.card .rays,.card .spark{display:none;pointer-events:none}
+.tier-ouro .aura,.tier-craque .aura{display:block;filter:blur(5cqw);animation:aura 2.6s ease-in-out infinite}
+.tier-ouro .aura{background:radial-gradient(closest-side,rgba(255,210,90,.75),transparent)}
+.tier-craque .aura{background:radial-gradient(closest-side,rgba(120,220,255,.85),rgba(170,90,255,.4),transparent)}
+@keyframes aura{0%,100%{opacity:.35;transform:scale(.97)}50%{opacity:.9;transform:scale(1.03)}}
+.tier-ouro .rays,.tier-craque .rays{display:block;position:absolute;left:-50%;top:-75%;width:200%;height:200%;
+  background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.28) 0 5deg,transparent 5deg 15deg);animation:spin 18s linear infinite;
+  -webkit-mask:radial-gradient(circle at 50% 50%,#000 0 30%,transparent 62%);mask:radial-gradient(circle at 50% 50%,#000 0 30%,transparent 62%)}
+.tier-craque .rays{background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.35) 0 4deg,rgba(255,150,240,.15) 4deg 8deg,transparent 8deg 14deg);animation-duration:12s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tier-ouro .spark,.tier-craque .spark{display:block;position:absolute;z-index:3;width:11cqw;aspect-ratio:1;background:#fff;filter:drop-shadow(0 0 1.5cqw #fff);
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);opacity:0;animation:twinkle 2.4s ease-in-out infinite}
+.card .spark.s1{left:14%;top:36%;animation-delay:0s}
+.card .spark.s2{left:80%;top:44%;animation-delay:.6s;width:8cqw}
+.card .spark.s3{left:20%;top:70%;animation-delay:1.2s;width:9cqw}
+.card .spark.s4{left:68%;top:16%;animation-delay:1.8s;width:7cqw}
+.card .spark.s5{left:56%;top:58%;animation-delay:.9s;width:6cqw}
+.tier-craque .spark{background:linear-gradient(135deg,#fff,#bff6ff 40%,#ffc6f5);animation-duration:1.8s}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.2) rotate(0)}45%{opacity:1;transform:scale(1) rotate(45deg)}70%{opacity:0;transform:scale(.4) rotate(90deg)}}
+.tier-ouro .shine{animation-duration:3s;background:linear-gradient(90deg,transparent,rgba(255,255,240,.75),transparent)}
+.tier-craque .shine{animation-duration:2.6s;width:55%;background:linear-gradient(90deg,transparent,rgba(255,140,230,.45),rgba(255,255,255,.8),rgba(120,240,255,.45),transparent)}
+.tier-ouro .frame{background:linear-gradient(110deg,#fff6c8,#7a5208 25%,#ffe58a 45%,#7a5208 65%,#fff6c8 85%,#7a5208);background-size:250% 100%;animation:frameMove 3.5s linear infinite}
+.tier-craque .frame{background:linear-gradient(110deg,#ffffff,#5b2bb8 18%,#7fe3ff 36%,#ff8ae6 54%,#3a5fe0 72%,#ffffff 90%);background-size:250% 100%;animation:frameMove 2.8s linear infinite}
+@keyframes frameMove{to{background-position:250% 0}}
+.tier-craque .face{background:linear-gradient(170deg,#7fe3ff 0%,#3a5fe0 40%,#5b2bb8 72%,#1b1466 100%)}
+.tier-craque .face::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:color-dodge;opacity:.22;
+  background:linear-gradient(125deg,#ff6ad5,#c774e8,#ad8cff,#8795e8,#94d0ff,#6affd5,#ff6ad5);background-size:300% 300%;animation:holo2 6s ease-in-out infinite}
+@keyframes holo2{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.tier-craque .ovr,.tier-craque .name,.tier-craque .st b{text-shadow:0 0 .6cqw rgba(20,10,80,.9),0 0 3cqw rgba(160,240,255,.8)}
+.tier-craque .st span,.tier-craque .sub,.tier-craque .foot{text-shadow:0 0 .6cqw rgba(20,10,80,.9)}
+.tier-ouro .ovr{text-shadow:0 .5cqw 0 rgba(255,255,255,.35),0 0 3cqw rgba(255,240,180,.8)}
+@media (prefers-reduced-motion:reduce){.card .aura,.card .rays,.card .spark,.card .frame,.tier-craque .face::after{animation:none!important}.card .spark{opacity:.8}}
 /* variações de tamanho */
 .card.mini .stats,.card.mini .foot,.card.mini .sub,.card.mini .num,.card.mini .court{display:none}
 .card.mini .photo{width:56%;margin-top:34%}
@@ -477,12 +512,12 @@ const ovr=p=>{const w=W[p.pos]||W.PON;let s=0,t=0;p.attrs.forEach((v,i)=>{s+=v*w
 const tier=o=>o>=85?"craque":o>=75?"ouro":o>=65?"prata":"bronze";
 const initials=n=>String(n||"?").trim().split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
 const BALL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 3c3 3 3 15 0 18M3.5 9c5 2 12 2 17 0M5 17c4-3 10-3 14 0"/></svg>';
-const TIERN={bronze:"Bronze",prata:"Prata",ouro:"Ouro",craque:"Craque"};
+const TIERN={bronze:"Bronze",prata:"Prata",ouro:"Ouro",craque:"Diamante"};
 const barCor=v=>v>=85?"#1fae6a":v>=75?"#5cc94a":v>=65?"#e3b21c":v>=50?"#e07a1f":"#d6453a";
 const sigla=n=>String(n||"").trim().split(/\s+/).filter(w=>w.length>2||/^[A-Z0-9]/.test(w)).map(w=>w[0]).slice(0,3).join("").toUpperCase()||"RC";
 function cardHTML(p,extra=""){const o=ovr(p),t=tier(o);
   return `<button type="button" class="card tier-${t} ${extra}" data-id="${p.id}" aria-label="${esc(p.nome)}, nota ${o}">
-   <div class="frame"></div><div class="face"><div class="tex"></div><div class="court"></div><div class="shine"></div>
+   <div class="aura"></div><div class="frame"></div><div class="face"><div class="tex"></div><div class="rays"></div><div class="court"></div><div class="shine"></div><i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i><i class="spark s4"></i><i class="spark s5"></i>
    <div class="ovr">${o}<small>${p.pos}</small><i></i></div>
    <div class="crest">${esc(sigla(team?.nome))}</div><div class="gen">${p.genero==="F"?"♀":"♂"}</div><div class="num">${p.numero?"#"+esc(p.numero):""}</div>
    <div class="photo">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</div>
