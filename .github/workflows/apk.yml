@@ -31,6 +31,9 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Ícone e tela de abertura
+        run: cp -r resources/android/res/. android/app/src/main/res/
+
       - name: Liberar a câmera
         run: |
           sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n\n    <application#' android/app/src/main/AndroidManifest.xml
