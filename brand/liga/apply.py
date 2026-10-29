@@ -22,6 +22,7 @@ s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="b
 rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Liga <span>da Justiça</span></div>')
 rep('O vôlei do seu time, organizado', 'O vôlei da Liga, organizado')
 rep('pelo app Rede Cheia Vôlei', 'pelo app Liga da Justiça Vôlei')
+rep('releases/download/rede-atual/RedeCheiaVolei.apk', 'releases/download/liga-atual/LigaDaJusticaVolei.apk')
 rep('placeholder="Nome do time"', 'placeholder="Nome do time" value="Liga da Justiça"')
 # identidade visual extra: fundo com brilho e título em degradê
 extra = '''

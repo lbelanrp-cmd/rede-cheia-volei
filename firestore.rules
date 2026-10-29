@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() { return request.auth != null; }
+    function membroRef(t) { return /databases/$(database)/documents/times/$(t)/membros/$(request.auth.uid); }
+    function membro(t) { return logado() && exists(membroRef(t)); }
+    function papel(t) { return get(membroRef(t)).data.papel; }
+    function gestor(t) { return membro(t) && papel(t) in ['presidente', 'capitao', 'capita', 'professor']; }
+    function presidente(t) { return membro(t) && papel(t) == 'presidente'; }
+    function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    match /usuarios/{uid} {
+      allow read, write: if logado() && request.auth.uid == uid;
+    }
+
+    match /convites/{codigo} {
+      allow get: if logado();
+      allow list: if false;
+      allow create: if logado()
+        && request.resource.data.criadoPor == request.auth.uid
+        && ((request.resource.data.papel == 'atleta' && gestor(request.resource.data.time))
+            || presidente(request.resource.data.time));
+      allow delete: if logado() && (
+        exists(/databases/$(database)/documents/times/$(resource.data.time)/membros/$(request.auth.uid))
+        || existsAfter(/databases/$(database)/documents/times/$(resource.data.time)/membros/$(request.auth.uid)));
+    }
+
+    match /times/{t} {
+      allow read: if membro(t);
+      allow create: if logado() && request.resource.data.criadoPor == request.auth.uid;
+      allow update: if gestor(t);
+      allow delete: if presidente(t);
+
+      match /membros/{uid} {
+        allow read: if membro(t);
+
+        function conviteOk() {
+          let c = get(/databases/$(database)/documents/convites/$(request.resource.data.codigo)).data;
+          return c.time == t
+            && c.papel == request.resource.data.papel
+            && c.carta == request.resource.data.carta;
+        }
+
+        allow create: if logado() && request.auth.uid == uid && (
+          (request.resource.data.papel == 'presidente'
+            && getAfter(/databases/$(database)/documents/times/$(t)).data.criadoPor == request.auth.uid)
+          || conviteOk());
+
+        allow update: if presidente(t)
+          || (request.auth.uid == uid && mudou().hasOnly(['nome']))
+          // atleta liga a carta que ele mesmo acabou de criar
+          || (request.auth.uid == uid && resource.data.carta == null
+              && mudou().hasOnly(['carta'])
+              && getAfter(/databases/$(database)/documents/times/$(t)/jogadores/$(request.resource.data.carta)).data.donoUid == request.auth.uid);
+
+        allow delete: if presidente(t) || (logado() && request.auth.uid == uid);
+      }
+
+      match /jogadores/{j} {
+        allow read: if membro(t);
+        allow create: if gestor(t)
+          // atleta cria a própria carta: atributos ficam em 50 até a comissão avaliar
+          || (membro(t) && get(membroRef(t)).data.carta == null
+              && request.resource.data.donoUid == request.auth.uid
+              && request.resource.data.attrs == [50, 50, 50, 50, 50, 50]
+              && request.resource.data.avaliado == false
+              && request.resource.data.presente == false
+              && request.resource.data.tipo == 'avulso'
+              && request.resource.data.keys().hasOnly(['nome', 'genero', 'pos', 'numero', 'foto', 'tipo', 'attrs', 'presente', 'avaliado', 'donoUid']));
+        allow delete: if gestor(t);
+        // comissão edita tudo; atleta edita os próprios dados, foto e presença, nunca os atributos
+        allow update: if gestor(t)
+          || (membro(t) && get(membroRef(t)).data.carta == j
+              && mudou().hasOnly(['foto', 'presente', 'nome', 'numero', 'pos', 'genero']));
+      }
+    }
+  }
+}

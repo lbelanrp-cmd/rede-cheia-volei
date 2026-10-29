@@ -77,3 +77,12 @@ jobs:
           name: ${{ matrix.titulo }} ${{ matrix.tag }}.${{ github.run_number }}
           files: ${{ matrix.arquivo }}.apk
           make_latest: ${{ matrix.marca == 'rede' }}
+
+      - name: Link fixo da versão mais nova
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.marca }}-atual
+          name: ${{ matrix.titulo }} (sempre a versão mais nova)
+          body: Link fixo que sempre baixa a última versão do app.
+          files: ${{ matrix.arquivo }}.apk
+          make_latest: false
