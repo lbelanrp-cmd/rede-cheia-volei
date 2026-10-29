@@ -17,7 +17,7 @@ rep('--bg:#0d1420; --panel:#151f30; --panel-2:#1c2940; --line:#2a3a56;',
 rep('--fg:#eef2f8; --muted:#8fa0bb; --accent:#ffb21f; --accent-2:#3f8cff;',
     '--fg:#ffffff; --muted:#b9b1c2; --accent:#e8197d; --accent-2:#2fbfa8; --accent-3:#e8197d;')
 rep('color:#1a1200', 'color:#ffffff', 0)
-rep('rgba(13,20,32,.94)', 'rgba(8,8,11,.95)', 0)
+rep('rgba(13,20,32,.97)', 'rgba(8,8,11,.97)', 0)
 s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="brand">Liga <span>da Justiça</span></div>')
 rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Liga <span>da Justiça</span></div>')
 rep('O vôlei do seu time, organizado', 'O vôlei da Liga, organizado')

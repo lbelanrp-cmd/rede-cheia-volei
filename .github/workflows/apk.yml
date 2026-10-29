@@ -47,6 +47,9 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Recuperar tela ao voltar do segundo plano
+        run: python3 native/fix_mainactivity.py
+
       - name: Ícone e tela de abertura
         run: cp -r resources/android/res/. android/app/src/main/res/
 
