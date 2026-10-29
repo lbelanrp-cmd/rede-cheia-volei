@@ -249,6 +249,9 @@ input[type=range]{accent-color:var(--accent);width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 [hidden]{display:none!important}
+.danger-box{border-color:var(--warn)}
+.danger-box h3{color:var(--warn)}
+.btn.danger[disabled]{opacity:.4;cursor:not-allowed}
 .tabs button{position:relative}
 .tabs .dot{position:absolute;top:7px;left:calc(50% + 7px);width:9px;height:9px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--bg)}
 .notices{position:fixed;left:0;right:0;top:calc(8px + env(safe-area-inset-top,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
@@ -452,6 +455,13 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
     <div class="grouplabel">Membros</div>
     <div class="list" id="members"></div>
     <button class="btn ghost" type="button" data-logout>Sair da conta</button>
+    <div class="box danger-box" id="delBox" hidden>
+      <h3>Excluir time</h3>
+      <p class="note" style="margin:0">Apaga o time de vez: todas as cartas, fotos, a lista, os sorteios e o acesso de todos os membros. Não dá para desfazer.</p>
+      <label class="f">Para confirmar, digite o nome do time: <b id="delName"></b><input type="text" id="delInput" autocomplete="off"></label>
+      <button class="btn danger" type="button" id="delBtn" disabled>Excluir time para sempre</button>
+      <div class="err" id="delErr"></div>
+    </div>
   </section>
 </div>
 
@@ -646,6 +656,7 @@ function startApp(){
     const first=!me;me=s.data();buildTabs();applyRole();if(first)go(gestor()?"elenco":"carta");renderAll();checkMembers();
   }));
   unsubs.push(onSnapshot(teamRef(),s=>{
+    if(!s.exists()&&!s.metadata.fromCache){toast("Este time foi excluído");leaveToOnboard();return}
     const d=s.data()||{};const em=d.sorteio?.em?.seconds||0;
     if(lastDrawSec!==null&&em&&em!==lastDrawSec&&Date.now()-selfDrawAt>20000)notify("Os times foram sorteados. Toque para ver.","sorteio");
     if(em)lastDrawSec=em;else if(lastDrawSec===null)lastDrawSec=0;
@@ -705,10 +716,10 @@ function applyRole(){
   $("#target").disabled=!gestor();$("#selA").disabled=!gestor();$("#selB").disabled=!gestor();
   $("#ptsA").disabled=!gestor();$("#ptsB").disabled=!gestor();
   $("#placarNote").textContent=gestor()?"Toque no número para marcar ponto. Vire o celular para ver o placar em tela cheia.":"Placar ao vivo, atualizado pela comissão. Vire o celular para tela cheia.";
-  $("#inviteBox").hidden=me.papel!=="presidente";
+  $("#inviteBox").hidden=me.papel!=="presidente";$("#delBox").hidden=me.papel!=="presidente";
 }
 function renderAll(){if(!me||!team)return;
-  $("#teamName").textContent=team.nome||"Meu time";
+  $("#teamName").textContent=team.nome||"Meu time";$("#delName").textContent=team.nome||"";
   renderMyCard();renderCards();renderPres();renderDrawInfo();renderTeams();renderScore();renderMembers();}
 
 /* ---------------- Minha carta (atleta) ---------------- */
@@ -772,6 +783,21 @@ async function gerarConvite(papel,carta,out){
 $("#mInvite").onclick=()=>gerarConvite("atleta",editing,$("#mInvOut"));
 $("#invBtn").onclick=()=>gerarConvite($("#invRole").value,null,$("#invOut"));
 
+/* ---------------- Excluir time ---------------- */
+async function leaveToOnboard(){stopAll();me=null;team=null;teamId=null;players=[];members=[];playersLoaded=false;membersLoaded=false;lastDrawSec=null;
+  try{await deleteDoc(doc(db,"usuarios",user.uid))}catch(e){}
+  $("#obWho").textContent=user.email||"";show("onboard")}
+$("#delInput").addEventListener("input",()=>{$("#delBtn").disabled=$("#delInput").value.trim().toLowerCase()!==String(team?.nome||"").trim().toLowerCase()});
+$("#delBtn").onclick=async()=>{
+  if(me?.papel!=="presidente")return;
+  const b=$("#delBtn");b.disabled=true;b.textContent="Excluindo…";$("#delErr").textContent="";
+  try{
+    const refs=[...players.map(p=>pRef(p.id)),...members.filter(m=>m.uid!==user.uid).map(m=>doc(db,"times",teamId,"membros",m.uid))];
+    for(let i=0;i<refs.length;i+=400){const bt=writeBatch(db);refs.slice(i,i+400).forEach(r=>bt.delete(r));await bt.commit()}
+    const bt=writeBatch(db);bt.delete(teamRef());bt.delete(doc(db,"times",teamId,"membros",user.uid));bt.delete(doc(db,"usuarios",user.uid));await bt.commit();
+    $("#delInput").value="";b.textContent="Excluir time para sempre";toast("Time excluído");leaveToOnboard();
+  }catch(e){b.disabled=false;b.textContent="Excluir time para sempre";$("#delErr").textContent="Não consegui excluir: "+(e.code||e.message)}
+};
 /* ---------------- Membros ---------------- */
 function renderMembers(){if(!me||!gestor())return;
   const pres=me.papel==="presidente";
