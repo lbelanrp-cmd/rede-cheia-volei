@@ -86,6 +86,9 @@ service cloud.firestore {
       match /fin_lanc/{l} {
         allow read, write: if fin(t);
       }
+      match /fin_comp/{c} {
+        allow read, write: if fin(t);
+      }
 
       match /jogadores/{j} {
         allow read: if membro(t);

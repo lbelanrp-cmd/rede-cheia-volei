@@ -1,6 +1,6 @@
 
 /* ================= LIGA: FINANCEIRO (só presidente e tesouraria) ================= */
-const FIN={subs:null,ok:false,cfg:null,lanc:[],mes:null,aba:"mens",filtro:"aberto",delArm:null,tmpFam:null,item:null};
+const FIN={subs:null,ok:false,cfg:null,lanc:[],mes:null,aba:"mens",filtro:"aberto",delArm:null,tmpFam:null,item:null,cat:null};
 ICON.financeiro='<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10v5M18 10v5"/>';
 LABEL.financeiro="Financeiro";
 EXTRA.parent.financeiro="mais";
@@ -88,27 +88,33 @@ function renderFin(){
       ${pg?`<button type="button" class="fin-pill" data-act="ver">✓ ${ddmm(pg.data)}</button>`:`<button type="button" class="btn primary fin-rec" data-act="receber">Receber</button>`}</div>`}).join("")
       :`<div class="empty">${FIN.filtro==="aberto"?"Todo mundo pagou este mês.":"Nenhum pagamento registrado neste mês."}</div>`;
   }else{
-    const tipo=FIN.aba==="desp"?"despesa":"receita";
-    topo.innerHTML=`<button class="btn primary" type="button" id="finNovo" style="width:100%">+ ${tipo==="despesa"?"Nova despesa":"Nova receita"}</button>`;
-    const ls=doMes.filter(l=>l.tipo===tipo&&(tipo==="despesa"||l.cat!=="mensalidade")).sort((a,b)=>(b.data||"").localeCompare(a.data||""));
-    lista.innerHTML=ls.length?ls.map(l=>`<div class="fin-lanc" data-id="${l.id}"><div class="dt"><b>${(l.data||"").slice(8,10)}</b><span>${mesSo((l.data||m).slice(0,7)).slice(0,3)}</span></div>
-      <div class="fin-who"><b>${esc(l.desc||l.cat)}</b><span>${esc(l.cat||"")}${l.forma?" · "+esc(l.forma):""}${l.porNome?" · por "+esc(l.porNome):""}</span></div>
-      <strong class="fin-val ${tipo==="despesa"?"out":"in"}">${tipo==="despesa"?"−":"+"}${brl(l.valor)}</strong>
-      <button type="button" class="x${FIN.delArm===l.id?" arm":""}" data-act="del">${FIN.delArm===l.id?"Apagar?":"✕"}</button></div>`).join("")
-      :`<div class="empty">Nenhuma ${tipo==="despesa"?"despesa":"receita extra"} em ${mesSo(m).toLowerCase()}.</div>`;
+    const tipo=FIN.aba==="desp"?"despesa":"receita",desp=tipo==="despesa";
+    let ls=doMes.filter(l=>l.tipo===tipo&&(desp||l.cat!=="mensalidade"));
+    const tot=soma(ls),porCat={};ls.forEach(l=>{const c=l.cat||"Outros";porCat[c]=Math.round(((porCat[c]||0)+(+l.valor||0))*100)/100});
+    const cats=Object.entries(porCat).sort((x,y)=>y[1]-x[1]);if(FIN.cat&&!porCat[FIN.cat])FIN.cat=null;
+    topo.innerHTML=`<button class="btn primary" type="button" id="finNovo" style="width:100%">+ ${desp?"Nova despesa":"Nova receita"}</button>`+
+      (cats.length?`<div class="fin-cats${desp?"":" rec"}"><div class="row spread"><strong>${desp?"Para onde foi o dinheiro":"De onde veio o dinheiro"}</strong><small>${brl(tot)}</small></div>
+      ${cats.map(([c,v])=>`<button type="button" class="fin-cat${FIN.cat===c?" on":""}" data-cat="${esc(c)}"><span>${esc(c)}</span><i><i style="width:${Math.max(4,v/cats[0][1]*100)}%"></i></i><b>${brl(v)}</b><small>${Math.round(v/(tot||1)*100)}%</small></button>`).join("")}
+      ${FIN.cat?`<button type="button" class="chip" data-cat="" style="align-self:flex-start">Mostrando só ${esc(FIN.cat)} · ver todas</button>`:`<small class="note">Toque numa categoria para ver só os lançamentos dela.</small>`}</div>`:"");
+    if(FIN.cat)ls=ls.filter(l=>(l.cat||"Outros")===FIN.cat);
+    ls.sort((x,y)=>(y.data||"").localeCompare(x.data||""));
+    lista.innerHTML=ls.length?ls.map(l=>{const n=(l.itens||[]).length,meta=[l.cat,l.para,n?`${n} ${n===1?"item":"itens"}`:"",l.temFoto?"comprovante":""].filter(Boolean);
+      return `<div class="fin-lanc" data-id="${l.id}" data-act="det" role="button" tabindex="0"><div class="dt"><b>${(l.data||"").slice(8,10)}</b><span>${mesSo((l.data||m).slice(0,7)).slice(0,3)}</span></div>
+      <div class="fin-who"><b>${esc(l.desc||l.cat)}</b><span>${meta.map(esc).join(" · ")}</span></div>
+      <strong class="fin-val ${desp?"out":"in"}">${desp?"−":"+"}${brl(l.valor)}</strong></div>`}).join("")
+      :`<div class="empty">Nenhuma ${desp?"despesa":"receita extra"} em ${mesSo(m).toLowerCase()}.</div>`;
   }
 }
-$("#finPrev").onclick=()=>{FIN.mes=mesAdd(FIN.mes,-1);renderFin()};
-$("#finNext").onclick=()=>{FIN.mes=mesAdd(FIN.mes,1);renderFin()};
-$("#finAba").addEventListener("click",e=>{const b=e.target.closest("button");if(b){FIN.aba=b.dataset.a;FIN.delArm=null;renderFin()}});
+$("#finPrev").onclick=()=>{FIN.mes=mesAdd(FIN.mes,-1);FIN.cat=null;renderFin()};
+$("#finNext").onclick=()=>{FIN.mes=mesAdd(FIN.mes,1);FIN.cat=null;renderFin()};
+$("#finAba").addEventListener("click",e=>{const b=e.target.closest("button");if(b){FIN.aba=b.dataset.a;FIN.delArm=null;FIN.cat=null;renderFin()}});
 $("#finTopo").addEventListener("click",e=>{const f=e.target.closest("[data-f]");if(f){FIN.filtro=f.dataset.f;renderFin();return}
+  const ct=e.target.closest("[data-cat]");if(ct){const c=ct.dataset.cat||null;FIN.cat=FIN.cat===c?null:c;renderFin();return}
   if(e.target.closest("#finNovo"))abrirLanc(FIN.aba==="desp"?"despesa":"receita")});
 $("#finLista").addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act;
   if(a==="receber"||a==="ver"){const u=cobrancas().find(x=>x.key===b.closest(".fin-row").dataset.key);if(!u)return;return a==="receber"?abrirReceber(u):abrirPago(u)}
-  if(a==="del"){const id=b.closest(".fin-lanc").dataset.id;
-    if(FIN.delArm!==id){FIN.delArm=id;renderFin();setTimeout(()=>{if(FIN.delArm===id){FIN.delArm=null;renderFin()}},3500);return}
-    FIN.delArm=null;try{await deleteDoc(doc(db,"times",teamId,"fin_lanc",id));toast("Lançamento apagado")}catch(x){toast("Não consegui apagar")}}
+  if(a==="det"){const l=FIN.lanc.find(x=>x.id===b.dataset.id);if(l)abrirDet(l)}
 });
 
 /* ---- janelas ---- */
@@ -137,17 +143,56 @@ function abrirPago(u){
     <button class="btn" type="button" id="fiRecibo">Copiar recibo para o WhatsApp</button>
     <button class="btn danger" type="button" id="fiDesfazer">Desfazer pagamento</button>
     <div class="err" id="fiErr"></div>`)}
-function abrirLanc(tipo){
-  FIN.item={modo:"lanc",tipo};const cats=tipo==="despesa"?CAT_DESP:CAT_REC;
-  const dataPadrao=FIN.mes===mesAtual()?hoje():FIN.mes+"-01";
-  finAbrir(`${cab(tipo==="despesa"?"Nova despesa":"Nova receita")}
-    <label class="f">Descrição<input type="text" id="fiDesc" maxlength="60" placeholder="${tipo==="despesa"?"Ex.: Aluguel da quadra do Furlan":"Ex.: Diária do avulso João"}"></label>
-    <div class="two"><label class="f">Valor (R$)<input type="text" id="fiValor" inputmode="decimal" placeholder="0,00"></label>
-      <label class="f">Data<input type="date" id="fiData" value="${dataPadrao}"></label></div>
-    <div class="two"><label class="f">Categoria<select id="fiCat">${optList(cats,cats[0])}</select></label>
-      <label class="f">Forma<select id="fiForma">${optList(FORMAS,"Pix")}</select></label></div>
+const compRef=id=>doc(db,"times",teamId,"fin_comp",id);
+function comprovante(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{
+  const k=Math.min(1,1100/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+  c.getContext("2d").drawImage(img,0,0,c.width,c.height);let q=.72,u=c.toDataURL("image/jpeg",q);while(u.length>600000&&q>.3){q-=.1;u=c.toDataURL("image/jpeg",q)}res(u)};
+  img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
+async function abrirLanc(tipo,l){
+  const desp=tipo==="despesa",cats=desp?CAT_DESP:CAT_REC,v=l||{desc:"",para:"",valor:"",data:FIN.mes===mesAtual()?hoje():FIN.mes+"-01",cat:cats[0],forma:"Pix",obs:""};
+  FIN.item={modo:"lanc",tipo,l:l||null,itens:(l?.itens||[]).map(i=>({...i})),foto:"",fotoOrig:""};
+  finAbrir(`${cab(l?(desp?"Editar despesa":"Editar receita"):(desp?"Nova despesa":"Nova receita"))}
+    <label class="f">Descrição<input type="text" id="fiDesc" maxlength="60" value="${esc(v.desc||"")}" placeholder="${desp?"Ex.: Aluguel da quadra do Furlan":"Ex.: Diária do avulso João"}"></label>
+    <label class="f">${desp?"Pago a (quem recebeu)":"Recebido de"}<input type="text" id="fiPara" maxlength="60" value="${esc(v.para||"")}" placeholder="${desp?"Ex.: Quadra do Furlan, Loja Esporte Total":"Ex.: João (avulso), Patrocinador X"}"></label>
+    <div class="box"><div class="row spread"><h3>Itens</h3><span class="note">opcional</span></div>
+      <div class="fin-ithead" id="fiItHead" hidden><span>Item</span><span>Qtd</span><span>Valor un.</span><span></span></div>
+      <div id="fiItens" class="lg-list" style="gap:6px"></div>
+      <button class="btn ghost" type="button" id="fiAddIt">+ Adicionar item</button></div>
+    <div class="two"><label class="f">Valor total (R$)<input type="text" id="fiValor" inputmode="decimal" value="${v.valor?num2(v.valor):""}" placeholder="0,00"></label>
+      <label class="f">Data<input type="date" id="fiData" value="${esc(v.data)}"></label></div>
+    <div class="two"><label class="f">Categoria<select id="fiCat">${optList(cats,v.cat)}</select></label>
+      <label class="f">Forma<select id="fiForma">${optList(FORMAS,v.forma)}</select></label></div>
+    <label class="f">Observação<input type="text" id="fiObs" maxlength="200" value="${esc(v.obs||"")}" placeholder="Opcional"></label>
+    <div class="fin-foto"><span id="fiFotoPrev"></span>
+      <label class="btn pbtn" for="fiCam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Foto do comprovante</label>
+      <label class="btn ghost pbtn" for="fiGal">Galeria</label><button class="btn ghost" type="button" id="fiFotoRm" hidden>Remover foto</button></div>
+    <input type="file" id="fiCam" accept="image/*" capture="environment" class="vh"><input type="file" id="fiGal" accept="image/*" class="vh">
     <div class="err" id="fiErr"></div>
-    <button class="btn primary" type="submit" id="fiSave">${tipo==="despesa"?"Lançar despesa":"Lançar receita"}</button>`)}
+    <button class="btn primary" type="submit" id="fiSave">${l?"Salvar alterações":(desp?"Lançar despesa":"Lançar receita")}</button>`);
+  renderItens();
+  if(l?.temFoto){try{const d=await getDoc(compRef(l.id));if(d.exists()&&FIN.item?.l===l){FIN.item.foto=FIN.item.fotoOrig=d.data().foto;fotoPrev()}}catch(e){}}}
+function fotoPrev(){const it=FIN.item,p=$("#fiFotoPrev");if(!p)return;p.innerHTML=it.foto?`<img src="${it.foto}" alt="Comprovante">`:"";$("#fiFotoRm").hidden=!it.foto}
+function renderItens(){const it=FIN.item,box=$("#fiItens");if(!box)return;
+  box.innerHTML=it.itens.map((x,i)=>`<div class="fin-it"><input type="text" class="iD" value="${esc(x.d)}" placeholder="Ex.: Bola Mikasa" maxlength="50"><input type="text" class="iQ" inputmode="numeric" value="${x.q||1}" aria-label="Quantidade"><input type="text" class="iV" inputmode="decimal" value="${x.v?num2(x.v):""}" placeholder="0,00" aria-label="Valor unitário"><button type="button" class="x" data-rmit="${i}" aria-label="Remover item">✕</button></div>`).join("");
+  $("#fiItHead").hidden=!it.itens.length;totalItens()}
+function lerItens(){FIN.item.itens=[...document.querySelectorAll(".fin-it")].map(r=>({d:r.querySelector(".iD").value.trim(),q:Math.max(1,parseInt(r.querySelector(".iQ").value)||1),v:parseBRL(r.querySelector(".iV").value)||0}))}
+function totalItens(){const it=FIN.item,v=$("#fiValor");if(!v)return;
+  if(it.itens.length){v.value=num2(Math.round(it.itens.reduce((t,x)=>t+x.q*x.v,0)*100)/100);v.readOnly=true}else v.readOnly=false}
+async function abrirDet(l){
+  const desp=l.tipo==="despesa",itens=l.itens||[];FIN.item={modo:"det",l};
+  finAbrir(`${cab(desp?"Despesa":"Receita")}
+    <div class="fin-big ${desp?"out":"in"}">${desp?"−":"+"}${brl(l.valor)}</div>
+    <h3 style="margin:0">${esc(l.desc||l.cat)}</h3>
+    <div class="fin-det"><span>Data</span><b>${ddmm(l.data)}/${(l.data||"").slice(0,4)}</b><span>Categoria</span><b>${esc(l.cat||"")}</b>
+      ${l.para?`<span>${desp?"Pago a":"Recebido de"}</span><b>${esc(l.para)}</b>`:""}<span>Forma</span><b>${esc(l.forma||"")}</b>
+      ${l.obs?`<span>Obs.</span><b>${esc(l.obs)}</b>`:""}<span>Lançado por</span><b>${esc(l.porNome||"")}</b></div>
+    ${itens.length?`<div style="overflow-x:auto"><table class="fin-itens"><thead><tr><th>Item</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead>
+      <tbody>${itens.map(i=>`<tr><td>${esc(i.d)}</td><td>${i.q}</td><td>${brl(i.v)}</td><td>${brl(i.q*i.v)}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td colspan="3">Total</td><td>${brl(l.valor)}</td></tr></tfoot></table></div>`:""}
+    ${l.temFoto?`<figure class="fin-comp" id="fiComp"><figcaption>Carregando comprovante…</figcaption></figure>`:`<p class="note" style="margin:0">Sem foto do comprovante.</p>`}
+    <div class="row"><button class="btn" type="button" id="fiEdit">Editar</button><button class="btn danger" type="button" id="fiDel">Apagar</button></div>
+    <div class="err" id="fiErr"></div>`);
+  if(l.temFoto){try{const d=await getDoc(compRef(l.id));const f=$("#fiComp");if(f&&FIN.item?.l===l)f.innerHTML=d.exists()?`<img src="${d.data().foto}" alt="Comprovante"><figcaption>Comprovante</figcaption>`:"<figcaption>Comprovante não encontrado.</figcaption>"}catch(e){const f=$("#fiComp");if(f)f.innerHTML="<figcaption>Não consegui carregar o comprovante.</figcaption>"}}}
 function abrirConfig(){
   const c=cfg();FIN.item={modo:"cfg"};FIN.tmpFam=(c.familias||[]).map(f=>({...f}));
   const pres=me.papel==="presidente";
@@ -172,6 +217,12 @@ function renderFams(){
   $("#fcA").innerHTML='<option value="">Pessoa 1</option>'+op;$("#fcB").innerHTML='<option value="">Pessoa 2</option>'+op}
 $("#finCfgBtn").onclick=abrirConfig;
 $("#finSheet").addEventListener("click",async e=>{
+  if(e.target.id==="fiAddIt"){lerItens();FIN.item.itens.push({d:"",q:1,v:0});renderItens();const r=document.querySelectorAll(".fin-it .iD");r[r.length-1]?.focus();return}
+  const ri=e.target.closest("[data-rmit]");if(ri){lerItens();FIN.item.itens.splice(+ri.dataset.rmit,1);renderItens();return}
+  if(e.target.id==="fiFotoRm"){FIN.item.foto="";fotoPrev();return}
+  if(e.target.id==="fiEdit"){const l=FIN.item.l;return abrirLanc(l.tipo,l)}
+  if(e.target.id==="fiDel"){const b=e.target;if(!b.dataset.arm){b.dataset.arm="1";b.textContent="Toque de novo para apagar";return}
+    const l=FIN.item.l;try{await deleteDoc(doc(db,"times",teamId,"fin_lanc",l.id));if(l.temFoto)deleteDoc(compRef(l.id)).catch(()=>{});finFechar();toast("Lançamento apagado")}catch(x){$("#fiErr").textContent="Não consegui apagar."}return}
   const rm=e.target.closest("[data-rm]");if(rm){FIN.tmpFam.splice(+rm.dataset.rm,1);return renderFams()}
   if(e.target.id==="fcAdd"){const a=$("#fcA").value,b=$("#fcB").value;
     if(!a||!b||a===b){$("#fiErr").textContent="Escolha duas pessoas diferentes.";return}
@@ -183,6 +234,9 @@ $("#finSheet").addEventListener("click",async e=>{
     if(!b.dataset.arm){b.dataset.arm="1";b.textContent="Toque de novo para desfazer";return}
     try{await deleteDoc(doc(db,"times",teamId,"fin_lanc",FIN.item.pg.id));finFechar();toast("Pagamento desfeito")}catch(x){$("#fiErr").textContent="Não consegui desfazer."}}
 });
+$("#finSheet").addEventListener("input",e=>{if(e.target.closest(".fin-it")){lerItens();totalItens()}});
+$("#finSheet").addEventListener("change",async e=>{if(e.target.id!=="fiCam"&&e.target.id!=="fiGal")return;const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{FIN.item.foto=await comprovante(f);fotoPrev()}catch(x){toast("Não consegui abrir essa foto")}});
 $("#finSheet").addEventListener("submit",async e=>{
   e.preventDefault();const it=FIN.item,err=$("#fiErr"),b=$("#fiSave");if(!it)return;err.textContent="";
   const base={criadoPor:user.uid,porNome:me.nome||"",em:serverTimestamp()};
@@ -194,11 +248,20 @@ $("#finSheet").addEventListener("submit",async e=>{
       await addDoc(lancCol(),{...base,tipo:"receita",cat:"mensalidade",mes:FIN.mes,cartas:it.u.cartas,nomes:it.u.nomes,valor,forma:$("#fiForma").value,data,obs:$("#fiObs").value.trim(),desc:`Mensalidade ${mesSo(FIN.mes).toLowerCase()} – ${it.u.nomes}`});
       finFechar();toast("Recebimento registrado");
     }else if(it.modo==="lanc"){
-      const valor=parseBRL($("#fiValor").value),data=$("#fiData").value,desc=$("#fiDesc").value.trim();
+      lerItens();const itens=it.itens.filter(x=>x.d||x.v);
+      if(itens.some(x=>!x.d)){err.textContent="Dê um nome para cada item.";return}
+      if(itens.some(x=>!(x.v>0))){err.textContent="Informe o valor de cada item.";return}
+      const valor=itens.length?Math.round(itens.reduce((t,x)=>t+x.q*x.v,0)*100)/100:parseBRL($("#fiValor").value);
+      const data=$("#fiData").value,desc=$("#fiDesc").value.trim();
       if(!desc){err.textContent="Escreva uma descrição.";return}if(!(valor>0)){err.textContent="Digite um valor válido.";return}if(!data){err.textContent="Escolha a data.";return}
       b.disabled=true;
-      await addDoc(lancCol(),{...base,tipo:it.tipo,cat:$("#fiCat").value,desc,valor,data,forma:$("#fiForma").value});
-      finFechar();toast(it.tipo==="despesa"?"Despesa lançada":"Receita lançada");
+      const dados={tipo:it.tipo,cat:$("#fiCat").value,desc,para:$("#fiPara").value.trim(),valor,data,forma:$("#fiForma").value,obs:$("#fiObs").value.trim(),itens,temFoto:!!it.foto};
+      let id;
+      if(it.l){await updateDoc(doc(db,"times",teamId,"fin_lanc",it.l.id),dados);id=it.l.id}
+      else{const r=await addDoc(lancCol(),{...base,...dados});id=r?.id}
+      if(id&&it.foto&&it.foto!==it.fotoOrig)await setDoc(compRef(id),{foto:it.foto});
+      if(id&&!it.foto&&it.fotoOrig)await deleteDoc(compRef(id)).catch(()=>{});
+      finFechar();toast(it.l?"Alterações salvas":(it.tipo==="despesa"?"Despesa lançada":"Receita lançada"));
     }else if(it.modo==="cfg"){
       const ind=parseBRL($("#fcInd").value),fam=parseBRL($("#fcFam").value),venc=Math.min(28,Math.max(1,parseInt($("#fcVenc").value)||10)),ini=$("#fcIni").value||mesAtual();
       if(!(ind>0)||!(fam>0)){err.textContent="Confira os valores.";return}
@@ -219,4 +282,7 @@ $("#finCopiar").onclick=()=>{
   const us=cobrancas(),abertos=us.filter(u=>!pagamento(u,m));
   const t=`💰 ${document.title} – ${mesNome(m)}\nRecebido: ${brl(rec)}\nDespesas: ${brl(desp)}\nSaldo do mês: ${brl(rec-desp)}\n\nMensalidades: ${us.length-abertos.length} de ${us.length} pagas`+
     (abertos.length?`\nEm aberto (${brl(soma(abertos))}): ${abertos.map(u=>u.nomes).join(", ")}`:"");
-  navigator.clipboard?.writeText(t).then(()=>toast("Resumo copiado"),()=>toast("Não consegui copiar"))};
+  const pc={};doMes.filter(l=>l.tipo==="despesa").forEach(l=>{pc[l.cat||"Outros"]=(pc[l.cat||"Outros"]||0)+(+l.valor||0)});
+  const det=Object.entries(pc).sort((a,b)=>b[1]-a[1]);
+  const t2=t+(det.length?`\n\nDespesas por categoria:\n${det.map(([c,v])=>`• ${c}: ${brl(v)}`).join("\n")}`:"");
+  navigator.clipboard?.writeText(t2).then(()=>toast("Resumo copiado"),()=>toast("Não consegui copiar"))};
