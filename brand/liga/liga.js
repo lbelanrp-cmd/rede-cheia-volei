@@ -243,7 +243,8 @@ function renderMais(){
   const box=$("#lgMais");if(!box||!me)return;
   const t=[["presenca","Lista do jogo","Confirmados para o jogo"],["sorteio","Sorteio","Times equilibrados"],["placar","Placar","Pontos e sets"]];
   if(gestor())t.push(["time","Time","Membros e convites"]);
-  box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile" data-v="${v}">${badges[v]?'<span class="dot"></span>':""}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("")}
+  if(typeof finAcesso==="function"&&finAcesso())t.unshift(["financeiro","Financeiro","Mensalidades e despesas"]);
+  box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile${v==="financeiro"?" fin":""}" data-v="${v}">${badges[v]?'<span class="dot"></span>':""}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("")}
 $("#lgMais").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)go(b.dataset.v)});
 
 /* ---- ligação com o app ---- */

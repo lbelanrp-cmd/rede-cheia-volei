@@ -1,0 +1,23 @@
+  <!-- ===== LIGA: FINANCEIRO (presidente e tesouraria) ===== -->
+  <section class="view" id="v-financeiro" hidden>
+    <div class="lg-head">
+      <h2>Financeiro</h2>
+      <button class="btn ghost" id="finCfgBtn" type="button">Configurar</button>
+    </div>
+    <div class="fin-mes">
+      <button type="button" id="finPrev" aria-label="Mês anterior">‹</button>
+      <b id="finMesNome"></b>
+      <button type="button" id="finNext" aria-label="Próximo mês">›</button>
+    </div>
+    <div class="fin-kpis" id="finKpis"></div>
+    <div class="fin-prog" id="finProg"></div>
+    <div class="seg lg-seg fin-seg" id="finAba">
+      <button data-a="mens" aria-pressed="true" type="button">Mensalidades</button>
+      <button data-a="desp" aria-pressed="false" type="button">Despesas</button>
+      <button data-a="rec" aria-pressed="false" type="button">Outras receitas</button>
+    </div>
+    <div id="finTopo"></div>
+    <div id="finLista" class="lg-list"></div>
+    <button class="btn" id="finCopiar" type="button">Copiar resumo do mês</button>
+  </section>
+  <div class="modal" id="finModal" hidden><form class="sheet" id="finSheet" novalidate></form></div>

@@ -9,6 +9,8 @@ service cloud.firestore {
     function gestor(t) { return membro(t) && papel(t) in ['presidente', 'capitao', 'capita', 'professor']; }
     function presidente(t) { return membro(t) && papel(t) == 'presidente'; }
     function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    // presidente ou quem o presidente liberou para a tesouraria
+    function fin(t) { return presidente(t) || (membro(t) && get(membroRef(t)).data.get('financeiro', false) == true); }
 
     match /usuarios/{uid} {
       allow read, write: if logado() && request.auth.uid == uid;
@@ -45,7 +47,7 @@ service cloud.firestore {
         allow create: if logado() && request.auth.uid == uid && (
           (request.resource.data.papel == 'presidente'
             && getAfter(/databases/$(database)/documents/times/$(t)).data.criadoPor == request.auth.uid)
-          || conviteOk());
+          || (conviteOk() && !request.resource.data.keys().hasAny(['financeiro'])));
 
         allow update: if presidente(t)
           || (request.auth.uid == uid && mudou().hasOnly(['nome']))
@@ -75,6 +77,14 @@ service cloud.firestore {
         allow read: if membro(t);
         allow create: if gestor(t) && request.resource.data.autorUid == request.auth.uid;
         allow update, delete: if gestor(t);
+      }
+
+      // Liga: financeiro — ninguém além do presidente e da tesouraria lê ou escreve
+      match /fin_config/{d} {
+        allow read, write: if fin(t);
+      }
+      match /fin_lanc/{l} {
+        allow read, write: if fin(t);
       }
 
       match /jogadores/{j} {

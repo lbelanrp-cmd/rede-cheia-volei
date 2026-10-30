@@ -54,9 +54,9 @@ rep('</style>', extra + '</style>')
 # funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
 here = os.path.dirname(os.path.abspath(__file__))
 rd = lambda n: open(os.path.join(here, n), encoding="utf-8").read()
-rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html"))
-rep('/*@@EXTRA_JS@@*/', rd("liga.js"))
-rep('</style>', rd("liga.css") + '</style>')
+rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html"))
+rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js"))
+rep('</style>', rd("liga.css") + rd("fin.css") + '</style>')
 fs_imp = 'from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";'
 rep(fs_imp, fs_imp + '\nimport {query,where,orderBy,limit} ' + fs_imp)
 open(p, "w", encoding="utf-8").write(s)

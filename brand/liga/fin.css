@@ -1,0 +1,54 @@
+
+/* ===== LIGA: financeiro ===== */
+.fin-mes{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px}
+.fin-mes button{background:none;border:0;color:var(--fg);font-size:28px;line-height:1;width:46px;height:42px;border-radius:9px}
+.fin-mes button:active{background:var(--panel-2)}
+.fin-mes b{font:800 19px var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+.fin-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi span{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.kpi b{font:800 22px var(--f-display);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.in b{color:var(--ok)}
+.kpi.out b,.kpi.neg b{color:var(--warn)}
+.kpi.caixa{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;background:linear-gradient(100deg,rgba(47,191,168,.16),rgba(232,25,125,.12));border-color:var(--accent-2)}
+.kpi.caixa b{font-size:28px}
+.fin-prog{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.fin-prog .row{justify-content:space-between}
+.fin-prog strong{font:800 16px var(--f-display);text-transform:uppercase}
+.fin-prog small{color:var(--muted);font-weight:600}
+.fin-bar{height:10px;border-radius:9px;background:var(--panel-2);overflow:hidden;display:flex}
+.fin-bar i{display:block;height:100%}
+.fin-bar .p{background:var(--ok)}
+.fin-bar .a{background:var(--warn)}
+.fin-bar .e{background:#f5c542}
+.fin-seg{grid-template-columns:1fr 1fr 1fr!important}
+.fin-seg button{padding:8px 4px!important;font-size:13px}
+.fin-row,.fin-lanc{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--sc,var(--line));border-radius:12px;padding:10px 12px}
+.st-pago{--sc:var(--ok)}
+.st-atrasado{--sc:var(--warn)}
+.st-pendente{--sc:#f5c542}
+.st-futuro{--sc:var(--line)}
+.fin-avs{display:flex;flex:none}
+.fin-avs .rk-av{width:36px;height:36px;border:2px solid var(--panel)}
+.fin-avs .rk-av+.rk-av{margin-left:-12px}
+.fin-who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fin-who b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-who span{font-size:12px;color:var(--muted)}
+.fin-who em{color:var(--warn);font-style:normal;font-weight:700}
+.fin-st{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--sc)}
+.fin-pill{border:1px solid var(--ok);color:var(--ok);background:rgba(60,207,142,.1);border-radius:99px;padding:6px 10px;font-size:12px;font-weight:800;flex:none}
+.fin-rec{padding:7px 12px!important;font-size:13px;flex:none}
+.fin-lanc .dt{display:flex;flex-direction:column;align-items:center;font-family:var(--f-display);line-height:1;flex:none;width:34px}
+.fin-lanc .dt b{font-size:20px;font-weight:800}
+.fin-lanc .dt span{font-size:11px;color:var(--muted);text-transform:uppercase}
+.fin-val{font:800 17px var(--f-display);font-variant-numeric:tabular-nums;flex:none}
+.fin-val.in{color:var(--ok)}
+.fin-val.out{color:var(--warn)}
+.fin-lanc .x{background:none;border:0;color:var(--muted);font-size:12px;font-weight:700;padding:4px;flex:none}
+.fin-lanc .x.arm{color:var(--warn)}
+.fin-fam{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.fin-fam b{flex:1;min-width:0;font-weight:700}
+.fin-det{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.fin-det span{color:var(--muted)}
+.fin-det b{font-weight:700;overflow-wrap:anywhere}
+.lg-tile.fin svg{color:var(--accent)}
