@@ -235,7 +235,7 @@ section.view{display:flex;flex-direction:column;gap:14px}
 .sheet .preview{display:flex;justify-content:center}
 .sheet .preview .card{width:180px}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
-input[type=text],select{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--fg);font:inherit;width:100%}
+input[type=text],input[type=date],input[type=time],textarea,select{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--fg);font:inherit;width:100%}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sl{display:grid;grid-template-columns:44px 1fr 34px;align-items:center;gap:8px;font-family:var(--f-display);font-weight:800}
 .sl output{text-align:right;font-variant-numeric:tabular-nums;font-size:18px}
@@ -493,6 +493,7 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
       <div class="err" id="delErr"></div>
     </div>
   </section>
+<!--@@EXTRA_VIEWS@@-->
 </div>
 
 <nav class="tabs" id="tabs" aria-label="Seções"></nav>
@@ -648,7 +649,7 @@ $("#aGoogle").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthPro
 document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=()=>signOut(auth));
 
 onAuthStateChanged(auth,async u=>{
-  stopAll();user=u;teamId=null;me=null;team=null;players=[];members=[];lastDrawSec=null;playersLoaded=false;membersLoaded=false;
+  stopAll();EXTRA.reset.forEach(f=>f());user=u;teamId=null;me=null;team=null;players=[];members=[];lastDrawSec=null;playersLoaded=false;membersLoaded=false;
   if(!u)return show("auth");
   show("loading");
   try{
@@ -690,7 +691,7 @@ function startApp(){
   show("app");
   unsubs.push(onSnapshot(doc(db,"times",teamId,"membros",user.uid),s=>{
     if(!s.exists()){toast("Você saiu deste time");stopAll();show("onboard");return}
-    const first=!me;me=s.data();buildTabs();applyRole();if(first){go(gestor()?"elenco":"carta");if(!gestor())fillMyForm()}renderAll();checkMembers();
+    const first=!me;me=s.data();buildTabs();applyRole();if(first){go(EXTRA.startView?EXTRA.startView():(gestor()?"elenco":"carta"));if(!gestor())fillMyForm()}renderAll();checkMembers();
   }));
   unsubs.push(onSnapshot(teamRef(),s=>{
     if(!s.exists()&&!s.metadata.fromCache){toast("Este time foi excluído");leaveToOnboard();return}
@@ -708,6 +709,7 @@ function startApp(){
     });
     players=s.docs.map(d=>({id:d.id,...d.data()}));playersLoaded=true;renderAll()}));
   unsubs.push(onSnapshot(collection(db,"times",teamId,"membros"),s=>{members=s.docs.map(d=>({uid:d.id,...d.data()}));membersLoaded=true;checkMembers();renderMembers()}));
+  EXTRA.start.forEach(f=>f());
 }
 /* ---------------- Avisos ---------------- */
 let lastDrawSec=null,selfDrawAt=0,playersLoaded=false,membersLoaded=false;const badges={};
@@ -729,6 +731,8 @@ function checkMembers(){
     .forEach(m=>notify(`${m.nome} entrou no time como ${PAPEL[m.papel]||m.papel}.`,"time"));
   try{localStorage.setItem(seenKey(),JSON.stringify(members.map(m=>m.uid)))}catch(e){}
 }
+/* ganchos para versões com funções extras (ex.: Liga) */
+const EXTRA={tabs:null,parent:{},startView:null,start:[],render:[],reset:[],onMark:null};
 const ICON={
  carta:'<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/>',
  elenco:'<rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/>',
@@ -738,12 +742,12 @@ const ICON={
  time:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c3 0 5 2.5 5 5"/>'};
 const LABEL={carta:"Carta",elenco:"Elenco",presenca:"Lista",sorteio:"Sorteio",placar:"Placar",time:"Time"};
 function buildTabs(){
-  const list=gestor()?["elenco","presenca","sorteio","placar","time"]:["carta","presenca","sorteio","placar"];
+  const list=EXTRA.tabs?EXTRA.tabs(gestor()):(gestor()?["elenco","presenca","sorteio","placar","time"]:["carta","presenca","sorteio","placar"]);
   $("#tabs").className="tabs"+(list.length===5?" t5":"");
   $("#tabs").innerHTML=list.map(v=>`<button data-v="${v}" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg>${LABEL[v]}<span class="dot" hidden></span></button>`).join("");
-  if(view&&!list.includes(view))go(list[0]);else markTab();
+  if(view&&!list.includes(EXTRA.parent[view]||view))go(list[0]);else markTab();
 }
-function markTab(){document.querySelectorAll("#tabs button").forEach(b=>{if(b.dataset.v===view)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");const d=b.querySelector(".dot");if(d)d.hidden=!badges[b.dataset.v]})}
+function markTab(){const cur=EXTRA.parent[view]||view;document.querySelectorAll("#tabs button").forEach(b=>{const v=b.dataset.v;if(v===cur)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");const d=b.querySelector(".dot");if(d)d.hidden=!(badges[v]||Object.keys(EXTRA.parent).some(k=>EXTRA.parent[k]===v&&badges[k]))});if(EXTRA.onMark)EXTRA.onMark()}
 function go(v){view=v;badges[v]=false;document.querySelectorAll(".view").forEach(s=>s.hidden=s.id!=="v-"+v);markTab();
   document.body.classList.toggle("on-placar",v==="placar");window.scrollTo(0,0);
   if(v==="placar"){try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}}}
@@ -758,7 +762,7 @@ function applyRole(){
 }
 function renderAll(){if(!me||!team)return;
   $("#teamName").textContent=team.nome||"Meu time";$("#delName").textContent=team.nome||"";
-  renderMyCard();renderCards();renderPres();renderDrawInfo();renderTeams();renderScore();renderMembers();}
+  renderMyCard();renderCards();renderPres();renderDrawInfo();renderTeams();renderScore();renderMembers();EXTRA.render.forEach(f=>f());}
 
 /* ---------------- Minha carta (atleta) ---------------- */
 let myEditing=false,myPhoto=null;
@@ -982,6 +986,7 @@ let resetArmed=false;
 $("#resetScore").onclick=()=>{if(!resetArmed){resetArmed=true;$("#resetScore").textContent="Confirmar?";setTimeout(()=>{resetArmed=false;$("#resetScore").textContent="Zerar jogo"},3000);return}
   resetArmed=false;$("#resetScore").textContent="Zerar jogo";const s={...sc(),a:0,b:0,sa:0,sb:0,hist:[]};lastSets="0-0";saveScore(s)};
 $("#fsBtn").onclick=()=>{const d=document.documentElement;try{(document.fullscreenElement?document.exitFullscreen():d.requestFullscreen()).catch(()=>toast("Tela cheia indisponível aqui"))}catch(e){toast("Tela cheia indisponível aqui")}};
+/*@@EXTRA_JS@@*/
 </script>
 </body>
 </html>

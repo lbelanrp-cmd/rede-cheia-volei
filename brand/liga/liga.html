@@ -1,0 +1,50 @@
+  <!-- ===== LIGA: AGENDA ===== -->
+  <section class="view" id="v-agenda" hidden>
+    <div class="lg-head">
+      <h2>Agenda</h2>
+      <button class="btn primary" id="lgNovo" type="button" hidden>+ Adicionar</button>
+    </div>
+    <div class="lg-chips" id="lgFiltro">
+      <button class="chip" data-f="todos" aria-pressed="true" type="button">Tudo</button>
+      <button class="chip" data-f="treino" aria-pressed="false" type="button">Treinos</button>
+      <button class="chip" data-f="evento" aria-pressed="false" type="button">Eventos</button>
+      <button class="chip" data-f="assembleia" aria-pressed="false" type="button">Assembleias</button>
+    </div>
+    <div id="lgAgendaList" class="lg-list"></div>
+    <button class="btn ghost" id="lgPassado" type="button">Ver anteriores</button>
+  </section>
+
+  <!-- ===== LIGA: RANK ===== -->
+  <section class="view" id="v-rank" hidden>
+    <h2>Rank</h2>
+    <div class="seg lg-seg" id="lgRankAba">
+      <button data-a="freq" aria-pressed="true" type="button">Frequência</button>
+      <button data-a="nota" aria-pressed="false" type="button">Nota</button>
+    </div>
+    <div class="lg-chips" id="lgRankPer">
+      <button class="chip" data-p="30" aria-pressed="true" type="button">Últimos 30 dias</button>
+      <button class="chip" data-p="tudo" aria-pressed="false" type="button">Temporada toda</button>
+    </div>
+    <div id="lgRankBody" class="lg-list"></div>
+  </section>
+
+  <!-- ===== LIGA: AVISOS ===== -->
+  <section class="view" id="v-avisos" hidden>
+    <h2>Avisos</h2>
+    <form class="box" id="lgAvisoForm" hidden novalidate>
+      <h3>Novo aviso</h3>
+      <input type="text" id="lgAvTit" maxlength="60" placeholder="Título (ex.: Treino de quarta cancelado)">
+      <textarea id="lgAvTxt" rows="4" maxlength="1000" placeholder="Escreva o aviso para o time"></textarea>
+      <div class="err" id="lgAvErr"></div>
+      <button class="btn primary" type="submit" id="lgAvPub">Publicar aviso</button>
+    </form>
+    <div id="lgAvisos" class="lg-list"></div>
+  </section>
+
+  <!-- ===== LIGA: MAIS ===== -->
+  <section class="view" id="v-mais" hidden>
+    <h2>Mais</h2>
+    <div class="lg-more" id="lgMais"></div>
+  </section>
+
+  <div class="modal" id="lgModal" hidden><form class="sheet" id="lgSheet" novalidate></form></div>

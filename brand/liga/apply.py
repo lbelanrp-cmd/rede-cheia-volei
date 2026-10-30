@@ -51,6 +51,14 @@ body{background:radial-gradient(90% 45% at 0% 0%,rgba(232,25,125,.22),transparen
 .tier-craque .ovr,.tier-craque .name,.tier-craque .st b{text-shadow:0 0 .6cqw rgba(0,0,0,.85),0 0 3cqw rgba(232,25,125,.7)!important}
 '''
 rep('</style>', extra + '</style>')
+# funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
+here = os.path.dirname(os.path.abspath(__file__))
+rd = lambda n: open(os.path.join(here, n), encoding="utf-8").read()
+rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html"))
+rep('/*@@EXTRA_JS@@*/', rd("liga.js"))
+rep('</style>', rd("liga.css") + '</style>')
+fs_imp = 'from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";'
+rep(fs_imp, fs_imp + '\nimport {query,where,orderBy,limit} ' + fs_imp)
 open(p, "w", encoding="utf-8").write(s)
 
 c = os.path.join(ROOT, "capacitor.config.json")

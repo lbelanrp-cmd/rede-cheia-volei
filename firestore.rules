@@ -57,6 +57,26 @@ service cloud.firestore {
         allow delete: if presidente(t) || (logado() && request.auth.uid == uid);
       }
 
+      // Liga: agenda (treinos, eventos, assembleias) — só a comissão edita
+      match /agenda/{a} {
+        allow read: if membro(t);
+        allow write: if gestor(t);
+      }
+      // Liga: cada membro confirma ou desmarca apenas a própria presença no treino
+      match /confirmacoes/{c} {
+        allow read: if membro(t);
+        allow create, update: if membro(t)
+          && request.resource.data.uid == request.auth.uid
+          && c == request.resource.data.inst + '_' + request.auth.uid;
+        allow delete: if gestor(t) || (membro(t) && resource.data.uid == request.auth.uid);
+      }
+      // Liga: mural de avisos — só a comissão publica e apaga
+      match /avisos/{v} {
+        allow read: if membro(t);
+        allow create: if gestor(t) && request.resource.data.autorUid == request.auth.uid;
+        allow update, delete: if gestor(t);
+      }
+
       match /jogadores/{j} {
         allow read: if membro(t);
         allow create: if gestor(t)
