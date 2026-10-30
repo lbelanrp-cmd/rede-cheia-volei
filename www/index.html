@@ -250,6 +250,17 @@ input[type=range]{accent-color:var(--accent);width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 [hidden]{display:none!important}
+.acct{background:none;border:0;padding:4px 0;text-align:left;color:var(--muted);display:inline-flex;gap:6px;align-items:center;font:inherit;font-size:13px;max-width:100%}
+.acct svg{width:15px;height:15px;flex:none;opacity:.8}
+.bio-login{display:flex;align-items:center;justify-content:center;gap:8px}
+.bio-login svg{width:22px;height:22px}
+.biolock{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px max(24px,env(safe-area-inset-right,0px)) 24px max(24px,env(safe-area-inset-left,0px));text-align:center}
+.biolock .brand{font-size:40px}
+.bio-btn{width:104px;height:104px;border-radius:50%;border:2px solid var(--accent);background:var(--panel);color:var(--accent);display:grid;place-items:center;box-shadow:0 0 30px rgba(0,0,0,.4)}
+.bio-btn svg,.bio-hero svg{width:58px;height:58px}
+.bio-hero{display:grid;place-items:center;color:var(--accent);padding-top:6px}
+.bio-state{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13px}
+.bio-state.on{color:var(--ok)}
 .card[data-pend]::after{content:"Avaliar";position:absolute;z-index:6;top:-2%;left:50%;transform:translateX(-50%);background:var(--warn);color:#fff;font:800 6.5cqw/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;padding:1.6cqw 3.5cqw;border-radius:99px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .mycard .card[data-pend]::after{content:"Aguardando avaliação"}
 /* desempenho: efeitos pesados só na carta grande; nada animando em segundo plano */
@@ -305,6 +316,7 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
 <!-- LOGIN -->
 <div class="screen auth" id="s-auth" hidden>
   <div><div class="brand">Rede <span>Cheia</span></div><div class="sub">O vôlei do seu time, organizado</div></div>
+  <button class="btn primary bio-login" type="button" id="aBio" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 12a3.5 3.5 0 0 1 7 0v1.5a12 12 0 0 1-.9 4.6"/><path d="M5.2 15.5A11 11 0 0 0 5.5 12a6.5 6.5 0 0 1 11.6-4"/><path d="M18.4 10.5c.07.5.1 1 .1 1.5v1.5"/><path d="M3.5 9a9 9 0 0 1 15.9-3.4"/></svg><span>Entrar com biometria</span></button>
   <div class="seg" id="authMode" style="align-self:stretch;display:grid;grid-template-columns:1fr 1fr">
     <button type="button" data-mode="entrar" aria-pressed="true">Já tenho conta</button>
     <button type="button" data-mode="criar" aria-pressed="false">Criar conta</button>
@@ -347,7 +359,7 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
   <header class="top">
     <div style="min-width:0">
       <div class="brand" id="teamName">Rede <span>Cheia</span></div>
-      <div class="sub"><span class="role" id="myRole"></span> <span id="myName"></span></div>
+      <button class="sub acct" id="acctBtn" type="button" aria-label="Minha conta"><span class="role" id="myRole"></span> <span id="myName"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
     <div class="row">
       <button class="btn ghost" id="fsBtn" type="button">Tela cheia</button>
@@ -540,6 +552,13 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
     </div>
   </form>
 </div>
+<div class="biolock" id="bioLock" hidden>
+  <div class="brand">Rede <span>Cheia</span></div>
+  <button class="bio-btn" type="button" id="bioUnlock" aria-label="Desbloquear com biometria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 12a3.5 3.5 0 0 1 7 0v1.5a12 12 0 0 1-.9 4.6"/><path d="M5.2 15.5A11 11 0 0 0 5.5 12a6.5 6.5 0 0 1 11.6-4"/><path d="M18.4 10.5c.07.5.1 1 .1 1.5v1.5"/><path d="M3.5 9a9 9 0 0 1 15.9-3.4"/></svg></button>
+  <p id="bioLockMsg" class="note">Toque para desbloquear</p>
+  <button class="btn ghost" type="button" id="bioOutra">Entrar com senha</button>
+</div>
+<div class="modal" id="acctModal" hidden><div class="sheet" id="acctSheet"></div></div>
 <div class="toast" id="toast" hidden></div>
 <div class="notices" id="notices" aria-live="polite"></div>
 
@@ -558,7 +577,7 @@ const firebaseConfig = {
 };
 
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup,sendPasswordResetEmail,reauthenticateWithCredential,EmailAuthProvider} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,addDoc,collection,onSnapshot,writeBatch,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $=s=>document.querySelector(s);
@@ -616,6 +635,81 @@ document.addEventListener("visibilitychange",()=>{
   if(!h){document.body.style.transform="translateZ(0)";requestAnimationFrame(()=>requestAnimationFrame(()=>{document.body.style.transform="";window.scrollBy(0,1);window.scrollBy(0,-1)}))}
 });
 window.addEventListener("pageshow",e=>{if(e.persisted)location.reload()});
+/* ---------------- Biometria (digital / rosto) ---------------- */
+const IC_FP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3a8 8 0 0 1-1.5 4.7"/><path d="M8.5 12a3.5 3.5 0 0 1 7 0v1.5a12 12 0 0 1-.9 4.6"/><path d="M5.2 15.5A11 11 0 0 0 5.5 12a6.5 6.5 0 0 1 11.6-4"/><path d="M18.4 10.5c.07.5.1 1 .1 1.5v1.5"/><path d="M3.5 9a9 9 0 0 1 15.9-3.4"/></svg>';
+const BIO_SERVER="redecheia.volei";
+const temNativo=()=>!!window.Capacitor?.nativePromise;
+const NB=(m,o)=>window.Capacitor.nativePromise("NativeBiometric",m,o||{});
+const lsx={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+let bioPend=null,bioDesbloqueado=false,bioDisp=null,bioAuto=false,saiuEm=0;
+const bioEmail=()=>lsx.get("rc_bio_email");
+async function bioDisponivel(){if(!temNativo())return false;if(bioDisp!==null)return bioDisp;
+  try{const r=await NB("isAvailable",{useFallback:false});bioDisp=!!r?.isAvailable}catch(e){bioDisp=false}return bioDisp}
+const bioVerificar=txt=>NB("verifyIdentity",{reason:txt,title:document.title,subtitle:txt,negativeButtonText:"Cancelar",maxAttempts:5});
+const precisaDesbloquear=u=>temNativo()&&!bioDesbloqueado&&lsx.get("rc_bio_lock")==="1"&&bioEmail()===u.email;
+function pedirDesbloqueio(){return new Promise(res=>{
+  const lock=$("#bioLock"),msg=$("#bioLockMsg");lock.hidden=false;let fim=false;
+  const acabar=v=>{if(fim)return;fim=true;lock.hidden=true;$("#bioUnlock").onclick=null;$("#bioOutra").onclick=null;res(v)};
+  const tentar=async()=>{msg.textContent="Use a sua digital ou o rosto para entrar";
+    try{await bioVerificar("Desbloquear o app");bioDesbloqueado=true;acabar(true)}catch(e){msg.textContent="Toque no ícone para tentar de novo"}};
+  $("#bioUnlock").onclick=tentar;
+  $("#bioOutra").onclick=()=>{acabar(false);bioAuto=true;signOut(auth)};
+  tentar()})}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){saiuEm=Date.now();return}
+  if(user&&saiuEm&&Date.now()-saiuEm>5*60*1000&&$("#bioLock").hidden&&lsx.get("rc_bio_lock")==="1"&&bioEmail()===user.email&&temNativo()){bioDesbloqueado=false;pedirDesbloqueio()}
+  saiuEm=0});
+async function bioOferecerLogin(){
+  const b=$("#aBio");b.hidden=true;const em=bioEmail();if(!em||!(await bioDisponivel()))return;
+  b.hidden=false;if(!$("#aEmail").value)$("#aEmail").value=em;
+  if(!bioAuto){bioAuto=true;bioEntrar()}}
+async function bioEntrar(){
+  $("#aErr").textContent="";let c;
+  try{await bioVerificar("Entrar na sua conta");c=await NB("getCredentials",{server:BIO_SERVER})}catch(e){return}
+  bioDesbloqueado=true;
+  try{await signInWithEmailAndPassword(auth,c.username,c.password)}
+  catch(err){$("#aErr").textContent=err.code==="auth/invalid-credential"?"Sua senha mudou. Entre com a senha nova para reativar a biometria.":authMsg(err);
+    if(err.code==="auth/invalid-credential")bioDesativar(true)}}
+$("#aBio").onclick=bioEntrar;
+async function bioOferecerAtivar(){
+  const p=bioPend;bioPend=null;if(!p||!user||p.em!==user.email||!(await bioDisponivel()))return;
+  if(bioEmail()===p.em){try{await NB("setCredentials",{username:p.em,password:p.pw,server:BIO_SERVER})}catch(e){}return}
+  if(lsx.get("rc_bio_nao_"+p.em))return;
+  $("#acctSheet").innerHTML=`<div class="bio-hero">${IC_FP}</div><h2 style="text-align:center">Entrar com biometria?</h2>
+    <p class="note" style="margin:0;text-align:center">Entre no app com a digital ou o rosto, sem digitar a senha. A senha fica guardada protegida no seu celular.</p>
+    <div class="err" id="acctErr"></div><button class="btn primary" type="button" id="bioSim">Ativar biometria</button><button class="btn ghost" type="button" id="bioNao">Agora não</button>`;
+  $("#acctModal").hidden=false;
+  $("#bioSim").onclick=()=>bioAtivar(p.em,p.pw);
+  $("#bioNao").onclick=()=>{lsx.set("rc_bio_nao_"+p.em,"1");$("#acctModal").hidden=true;toast("Você pode ativar depois tocando no seu nome, no topo")}}
+async function bioAtivar(em,pw){
+  $("#acctErr").textContent="";
+  try{await bioVerificar("Confirme para ativar a biometria")}catch(e){$("#acctErr").textContent="Biometria não confirmada. Tente de novo.";return}
+  try{await NB("setCredentials",{username:em,password:pw,server:BIO_SERVER})}catch(e){$("#acctErr").textContent="Não consegui guardar o acesso neste celular.";return}
+  lsx.set("rc_bio_email",em);lsx.set("rc_bio_lock","1");lsx.set("rc_bio_nao_"+em,null);bioDesbloqueado=true;
+  $("#acctModal").hidden=true;toast("Biometria ativada")}
+async function bioDesativar(silencioso){try{await NB("deleteCredentials",{server:BIO_SERVER})}catch(e){}
+  lsx.set("rc_bio_email",null);lsx.set("rc_bio_lock",null);if(!silencioso)toast("Biometria desativada")}
+async function abrirConta(){
+  if(!user)return;const disp=await bioDisponivel(),on=bioEmail()===user.email;
+  let bio;
+  if(!temNativo())bio=`<p class="note" style="margin:0">Disponível no app instalado no celular.</p>`;
+  else if(!disp)bio=`<p class="note" style="margin:0">Este celular não tem digital ou rosto cadastrado. Cadastre nas configurações do Android para usar.</p>`;
+  else if(on)bio=`<span class="bio-state on">✓ Ativada</span><p class="note" style="margin:0">O app pede a sua digital ou rosto ao abrir.</p><button class="btn ghost" type="button" id="bioOff">Desativar biometria</button>`;
+  else bio=`<p class="note" style="margin:0">Digite sua senha para ativar a entrada com digital ou rosto.</p><input type="password" id="bioPw" placeholder="Sua senha" autocomplete="current-password"><button class="btn primary" type="button" id="bioOn">Ativar biometria</button>`;
+  $("#acctSheet").innerHTML=`<div class="row spread"><h2>Minha conta</h2><button class="btn ghost" type="button" id="acctX">Fechar</button></div>
+    <p class="note" style="margin:0">${esc(user.email||"")}</p>
+    <div class="box"><h3 style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;display:inline-grid;color:var(--accent)">${IC_FP}</span>Entrar com biometria</h3>${bio}<div class="err" id="acctErr"></div></div>
+    <button class="btn ghost" type="button" id="acctSair">Sair da conta</button>`;
+  $("#acctModal").hidden=false;
+  $("#acctX").onclick=()=>$("#acctModal").hidden=true;
+  $("#acctSair").onclick=()=>{$("#acctModal").hidden=true;bioAuto=true;signOut(auth)};
+  if($("#bioOff"))$("#bioOff").onclick=async()=>{await bioDesativar();abrirConta()};
+  if($("#bioOn"))$("#bioOn").onclick=async()=>{const pw=$("#bioPw").value;$("#acctErr").textContent="";
+    if(!pw){$("#acctErr").textContent="Digite sua senha.";return}
+    try{await reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,pw))}catch(e){$("#acctErr").textContent="Senha incorreta.";return}
+    await bioAtivar(user.email,pw)}}
+$("#acctBtn").onclick=abrirConta;
+$("#acctModal").addEventListener("click",e=>{if(e.target.id==="acctModal")$("#acctModal").hidden=true});
 /* ---------------- Estado ---------------- */
 let user=null,teamId=null,me=null,team=null,players=[],members=[],unsubs=[],filter="todos",view=null;
 const gestor=()=>GESTORES.includes(me?.papel);
@@ -639,18 +733,20 @@ $("#authForm").addEventListener("submit",async e=>{e.preventDefault();
   if(pw.length<6){$("#aErr").textContent="A senha precisa de pelo menos 6 caracteres.";return}
   if(authMode==="criar"&&pw!==$("#aPass2").value){$("#aErr").textContent="As duas senhas não são iguais.";return}
   const b=$("#aGo"),txt=b.textContent;b.disabled=true;b.textContent=authMode==="criar"?"Criando conta…":"Entrando…";
+  bioPend={em,pw};bioDesbloqueado=true;
   try{if(authMode==="criar")await createUserWithEmailAndPassword(auth,em,pw);else await signInWithEmailAndPassword(auth,em,pw)}
-  catch(err){$("#aErr").textContent=(authMode==="entrar"&&err.code==="auth/invalid-credential")?"E-mail ou senha incorretos. Se ainda não tem conta, toque em Criar conta.":authMsg(err)}
+  catch(err){bioPend=null;$("#aErr").textContent=(authMode==="entrar"&&err.code==="auth/invalid-credential")?"E-mail ou senha incorretos. Se ainda não tem conta, toque em Criar conta.":authMsg(err)}
   b.disabled=false;b.textContent=txt});
 $("#aReset").onclick=async()=>{const em=$("#aEmail").value.trim();if(!em){$("#aErr").textContent="Digite seu e-mail acima e toque de novo.";return}
   try{await sendPasswordResetEmail(auth,em);$("#aErr").textContent="";toast("Enviamos um e-mail para trocar a senha")}catch(err){$("#aErr").textContent=authMsg(err)}};
 if(window.Capacitor?.isNativePlatform?.()){$("#aGoogle").hidden=true;document.querySelector(".or").hidden=true}
 $("#aGoogle").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(err){$("#aErr").textContent=authMsg(err)}};
-document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=()=>signOut(auth));
+document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=()=>{bioAuto=true;signOut(auth)});
 
 onAuthStateChanged(auth,async u=>{
   stopAll();EXTRA.reset.forEach(f=>f());user=u;teamId=null;me=null;team=null;players=[];members=[];lastDrawSec=null;playersLoaded=false;membersLoaded=false;
-  if(!u)return show("auth");
+  if(!u){show("auth");bioOferecerLogin();return}
+  if(precisaDesbloquear(u)){show("loading");const ok=await pedirDesbloqueio();if(!ok||user!==u)return}
   show("loading");
   try{
     const us=await getDoc(doc(db,"usuarios",u.uid));
@@ -688,7 +784,7 @@ $("#obJoin").onclick=async()=>{
 
 /* ---------------- App ---------------- */
 function startApp(){
-  show("app");
+  show("app");setTimeout(bioOferecerAtivar,1200);
   unsubs.push(onSnapshot(doc(db,"times",teamId,"membros",user.uid),s=>{
     if(!s.exists()){toast("Você saiu deste time");stopAll();show("onboard");return}
     const first=!me;me=s.data();buildTabs();applyRole();if(first){go(EXTRA.startView?EXTRA.startView():(gestor()?"elenco":"carta"));if(!gestor())fillMyForm()}renderAll();checkMembers();
