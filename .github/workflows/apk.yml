@@ -40,7 +40,11 @@ jobs:
         run: python3 brand/${{ matrix.marca }}/apply.py
 
       - name: Instalar Capacitor
-        run: npm install
+        run: |
+          if ! npm install --no-audit --no-fund > npm.log 2>&1; then
+            grep -iE "err|notarget|peer|404" npm.log | head -25 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1
+          fi
 
       - name: Criar projeto Android
         run: |
