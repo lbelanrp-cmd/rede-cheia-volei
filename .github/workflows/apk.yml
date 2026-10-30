@@ -43,8 +43,10 @@ jobs:
         run: |
           if ! npm install --no-audit --no-fund > npm.log 2>&1; then
             grep -iE "err|notarget|peer|404" npm.log | head -25 | while IFS= read -r l; do echo "::error::$l"; done
+            echo "::error::versoes $(npm view @capgo/capacitor-native-biometric versions --json | tr -d ' \n' | tail -c 400)"
             exit 1
           fi
+          echo "::notice::biometria instalada $(node -p "require('@capgo/capacitor-native-biometric/package.json').version")"
 
       - name: Criar projeto Android
         run: |

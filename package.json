@@ -6,6 +6,6 @@
     "@capacitor/android": "6.1.2",
     "@capacitor/cli": "6.1.2",
     "@capacitor/core": "6.1.2",
-    "@capgo/capacitor-native-biometric": "6.0.5"
+    "@capgo/capacitor-native-biometric": ">=6.0.0 <7.0.0"
   }
 }
