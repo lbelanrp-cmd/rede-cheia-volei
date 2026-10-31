@@ -59,10 +59,10 @@ section.view{display:flex;flex-direction:column;gap:14px}
   repeating-conic-gradient(from 180deg at 22% 34%,rgba(255,255,255,.3) 0 .5deg,transparent .5deg 2.6deg),
   repeating-conic-gradient(from 180deg at 22% 34%,transparent 0 1.3deg,rgba(0,0,0,.1) 1.3deg 1.8deg,transparent 1.8deg 2.6deg);
   -webkit-mask:linear-gradient(170deg,#000 30%,rgba(0,0,0,.25) 60%,transparent 68%);mask:linear-gradient(170deg,#000 30%,rgba(0,0,0,.25) 60%,transparent 68%)}
-.card .band{left:0;right:0;bottom:0;height:43%;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 35%,rgba(0,0,0,.05));border-top:.35cqw solid rgba(255,255,255,.35)}
+.card .band{left:0;right:0;bottom:0;height:47%;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 35%,rgba(0,0,0,.05));border-top:.35cqw solid rgba(255,255,255,.35)}
 .card .bignum,.card .rays,.card .streaks,.card .lux,.card .foil,.card .flare,.card .spark,.card .pt,.card .aura,.card .glare,.card .shine.s2{display:none;pointer-events:none}
 /* foto grande */
-.card .photo{z-index:2;top:3%;left:21%;right:2%;height:54%;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 97%),linear-gradient(90deg,transparent 0,#000 16%,#000 86%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,#000 62%,transparent 97%),linear-gradient(90deg,transparent 0,#000 16%,#000 86%,transparent 100%);mask-composite:intersect}
+.card .photo{z-index:2;top:3%;left:21%;right:2%;height:51%;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 97%),linear-gradient(90deg,transparent 0,#000 16%,#000 86%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,#000 62%,transparent 97%),linear-gradient(90deg,transparent 0,#000 16%,#000 86%,transparent 100%);mask-composite:intersect}
 .card .photo img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block}
 .card .photo.vazia{display:flex;align-items:flex-end;justify-content:center}
 .card .photo .sil{width:74%;height:auto;fill:var(--ink);opacity:.2}
@@ -72,12 +72,15 @@ section.view{display:flex;flex-direction:column;gap:14px}
 .card .crest{z-index:4;left:11%;top:35%;width:11cqw;aspect-ratio:1/1.12;display:grid;place-items:center;font-weight:900;font-size:4.4cqw;clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);background:var(--ink);color:var(--m1)}
 .card .num{z-index:4;left:6%;top:45%;width:21cqw;text-align:center;font-size:6.2cqw;font-weight:800;opacity:.85;white-space:nowrap}
 /* nome e atributos */
-.card .name{z-index:4;left:5%;right:5%;top:57%;text-align:center;font-weight:800;font-size:12.5cqw;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card .stats{z-index:4;left:5%;right:5%;top:69.5%;display:grid;grid-template-columns:repeat(6,1fr);text-align:center}
-.card .st{display:flex;flex-direction:column;align-items:center;gap:.8cqw;min-width:0}
-.card .st span{font-size:5.1cqw;font-weight:700;letter-spacing:.03em;color:var(--ink2)}
-.card .st b{font-size:9.8cqw;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.card .foot{z-index:4;left:0;right:0;bottom:7%;display:flex;justify-content:center;align-items:center;gap:1.5cqw;font-size:4cqw;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);white-space:nowrap}
+.card .name{z-index:4;left:5%;right:5%;top:52.5%;text-align:center;font-weight:800;font-size:12.5cqw;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .stats{z-index:4;left:11%;right:11%;top:62.5%;display:grid;grid-template-columns:1fr 1fr;column-gap:9cqw;row-gap:1.6cqw}
+.card .st{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:2cqw;min-width:0}
+.card .st b{font-size:7.8cqw;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.card .st span{font-size:5.3cqw;font-weight:700;letter-spacing:.05em;color:var(--ink2)}
+.card .st em{grid-column:1/-1;display:block;height:1.1cqw;border-radius:2cqw;background:rgba(0,0,0,.18);overflow:hidden;margin-top:.7cqw}
+.card .st em::after{content:"";display:block;height:100%;width:var(--v);background:var(--bar)}
+.tier-craque .st em{background:rgba(255,255,255,.18)}
+.card .foot{z-index:4;left:0;right:0;bottom:5.5%;display:flex;justify-content:center;align-items:center;gap:1.5cqw;font-size:4cqw;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);white-space:nowrap}
 .card .foot svg{width:4.8cqw;height:4.8cqw}
 /* brilho que passa em todas as cartas */
 .card .shine{display:block;z-index:5;top:-30%;left:-70%;width:45%;height:160%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);transform:rotate(18deg);animation:shine 5.5s ease-in-out infinite}
@@ -613,8 +616,7 @@ function cardHTML(p,extra=""){const o=ovr(p),t=tier(o),gen=p.genero==="F"?"♀":
    <div class="ovr">${o}<small>${p.pos}</small></div>
    <div class="crest">${esc(sigla(team?.nome))}</div><div class="num">${p.numero?"#"+esc(p.numero)+" · ":""}${gen}</div>
    <div class="name">${esc(p.nome)}</div>
-   <div class="stats">${ATTR.map((a,i)=>`<div class="st"><span>${a[0]}</span><b>${p.attrs[i]}</b></div>`).join("")}</div>
-   <div class="foot">${BALL}${p.tipo==="mensal"?"Mensalista":"Avulso"} · ${TIERN[t]}</div>
+   <div class="stats">${ATTR.map((a,i)=>{const v=p.attrs[i];return `<div class="st"><b>${v}</b><span>${a[0]}</span><em style="--v:${v}%;--bar:${barCor(v)}"></em></div>`}).join("")}</div>
    <div class="glare"></div></div></button>`}
 function fotoDe(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=380;c.width=c.height=s;const m=Math.min(img.width,img.height);c.getContext("2d").drawImage(img,(img.width-m)/2,(img.height-m)*.18,m,m,0,0,s,s);res(c.toDataURL("image/jpeg",.8))};img.onerror=rej;img.src=r.result};r.onerror=rej;r.readAsDataURL(file)})}
 function novoCodigo(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";const r=crypto.getRandomValues(new Uint8Array(6));r.forEach(x=>s+=a[x%a.length]);return s}
