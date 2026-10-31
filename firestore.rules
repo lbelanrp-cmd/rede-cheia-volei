@@ -9,8 +9,8 @@ service cloud.firestore {
     function gestor(t) { return membro(t) && papel(t) in ['presidente', 'vicepresidente', 'capitao', 'capita', 'professor']; }
     function presidente(t) { return membro(t) && papel(t) == 'presidente'; }
     function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
-    // presidente ou quem o presidente liberou para a tesouraria
-    function fin(t) { return presidente(t) || (membro(t) && (papel(t) == 'tesoureiro' || get(membroRef(t)).data.get('financeiro', false) == true)); }
+    // financeiro: só o presidente e o(a) tesoureiro(a)
+    function fin(t) { return presidente(t) || (membro(t) && papel(t) == 'tesoureiro'); }
     // diretoria: vê as assembleias
     function diretoria(t) { return gestor(t) || (membro(t) && papel(t) in ['tesoureiro', 'diretoria']); }
 

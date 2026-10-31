@@ -18,7 +18,7 @@ const mesNome=m=>{const[y,mm]=m.split("-").map(Number);const s=new Date(y,mm-1,1
 const mesSo=m=>mesNome(m).split(" ")[0];
 const ddmm=s=>s?`${s.slice(8,10)}/${s.slice(5,7)}`:"";
 const cfg=()=>({...CFG_PADRAO(),...(FIN.cfg||{})});
-const finAcesso=()=>!!me&&(me.papel==="presidente"||me.papel==="tesoureiro"||me.financeiro===true);
+const finAcesso=()=>!!me&&(me.papel==="presidente"||me.papel==="tesoureiro");
 const cfgRef=()=>doc(db,"times",teamId,"fin_config","geral");
 const lancCol=()=>collection(db,"times",teamId,"fin_lanc");
 
@@ -242,8 +242,7 @@ function abrirConfig(){
     <div class="box"><h3>Planos família</h3><div id="fcFams"></div>
       <div class="two"><select id="fcA"></select><select id="fcB"></select></div>
       <button class="btn" type="button" id="fcAdd">Juntar no plano família</button></div>
-    ${pres?`<div class="box"><h3>Tesouraria</h3><p class="note" style="margin:0">Quem pode ver e mexer no financeiro, além de você e de quem tem o cargo Tesoureiro(a).</p>
-      ${members.filter(x=>x.papel!=="presidente").map(x=>`<label class="chk"><input type="checkbox" class="fcAc" value="${x.uid}" ${x.financeiro?"checked":""}><b>${esc(x.nome)}</b><em style="color:var(--muted)">${PAPEL[x.papel]||""}</em></label>`).join("")||'<p class="note">Nenhum outro membro no time ainda.</p>'}</div>`:""}
+    <p class="note">Só o presidente e quem tem o cargo Tesoureiro(a) veem e alteram o financeiro.</p>
     <div class="err" id="fiErr"></div>
     <button class="btn primary" type="submit" id="fiSave">Salvar</button>`);
   renderFams()}
@@ -309,9 +308,6 @@ $("#finSheet").addEventListener("submit",async e=>{
       b.disabled=true;
       const chave=$("#fcChave").value.trim();if(!chave){err.textContent="Informe a chave Pix.";b.disabled=false;return}
       await setDoc(cfgRef(),{valorInd:ind,valorFam:fam,venc,inicio:ini,familias:FIN.tmpFam,chave,recebedor:$("#fcNome").value.trim()||"LIGA DA JUSTICA VOLEI",cidade:$("#fcCid").value.trim()||"BRASIL"},{merge:true});
-      if(me.papel==="presidente"){const bt=writeBatch(db);let n=0;
-        document.querySelectorAll(".fcAc").forEach(c=>{const m=members.find(x=>x.uid===c.value);if(m&&!!m.financeiro!==c.checked){bt.update(doc(db,"times",teamId,"membros",m.uid),{financeiro:c.checked});n++}});
-        if(n)await bt.commit()}
       finFechar();toast("Configuração salva");
     }
   }catch(x){b.disabled=false;err.textContent="Não consegui salvar: "+(x.code||x.message)}
