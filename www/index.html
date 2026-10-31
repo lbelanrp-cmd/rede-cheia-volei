@@ -837,7 +837,7 @@ $("#obJoin").onclick=async()=>{
   try{const cs=await getDoc(doc(db,"convites",code));
     if(!cs.exists()){$("#obErr").textContent="Código não encontrado ou já usado. Peça um novo ao time.";return}
     const c=cs.data();const b=writeBatch(db);
-    b.set(doc(db,"times",c.time,"membros",user.uid),{papel:c.papel,nome:meu,email:user.email||"",carta:c.carta??null,codigo:code});
+    b.set(doc(db,"times",c.time,"membros",user.uid),{papel:c.papel,nome:meu,email:user.email||"",carta:c.carta??null,codigo:code,...(c.joga?{joga:true}:{})});
     b.set(doc(db,"usuarios",user.uid),{time:c.time});
     b.delete(doc(db,"convites",code));
     await b.commit();teamId=c.time;startApp();toast("Bem-vindo ao time");
@@ -849,7 +849,7 @@ function startApp(){
   show("app");setTimeout(bioOferecerAtivar,1200);
   unsubs.push(onSnapshot(doc(db,"times",teamId,"membros",user.uid),s=>{
     if(!s.exists()){toast("Você saiu deste time");stopAll();show("onboard");return}
-    const first=!me;me=s.data();buildTabs();applyRole();if(first){go(EXTRA.startView?EXTRA.startView():(gestor()?"elenco":"carta"));if(!gestor())fillMyForm()}renderAll();checkMembers();
+    const first=!me;me=s.data();buildTabs();applyRole();if(first){go(EXTRA.startView?EXTRA.startView():(gestor()?"elenco":"carta"));if(jogaEu())fillMyForm()}renderAll();checkMembers();
   }));
   unsubs.push(onSnapshot(teamRef(),s=>{
     if(!s.exists()&&!s.metadata.fromCache){toast("Este time foi excluído");leaveToOnboard();return}
@@ -890,7 +890,9 @@ function checkMembers(){
   try{localStorage.setItem(seenKey(),JSON.stringify(members.map(m=>m.uid)))}catch(e){}
 }
 /* ganchos para versões com funções extras (ex.: Liga) */
-const EXTRA={tabs:null,parent:{},startView:null,start:[],render:[],reset:[],onMark:null};
+const EXTRA={tabs:null,parent:{},startView:null,start:[],render:[],reset:[],onMark:null,joga:null,membroExtra:null};
+// quem tem a própria carta de atleta (no Rede Cheia: quem não é da comissão)
+const jogaEu=()=>!!me&&(EXTRA.joga?EXTRA.joga(me):!gestor());
 const ICON={
  carta:'<rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/>',
  elenco:'<rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/>',
@@ -901,7 +903,7 @@ const ICON={
 const LABEL={carta:"Carta",elenco:"Elenco",presenca:"Lista",sorteio:"Sorteio",placar:"Placar",time:"Time"};
 function buildTabs(){
   const list=EXTRA.tabs?EXTRA.tabs(gestor()):(gestor()?["elenco","presenca","sorteio","placar","time"]:["carta","presenca","sorteio","placar"]);
-  $("#tabs").className="tabs"+(list.length===5?" t5":"");
+  $("#tabs").className="tabs"+(list.length>4?" t"+list.length:"");
   $("#tabs").innerHTML=list.map(v=>`<button data-v="${v}" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg>${LABEL[v]}<span class="dot" hidden></span></button>`).join("");
   if(view&&!list.includes(EXTRA.parent[view]||view))go(list[0]);else markTab();
 }
@@ -925,7 +927,7 @@ function renderAll(){if(!me||!team)return;
 /* ---------------- Minha carta (atleta) ---------------- */
 let myEditing=false,myPhoto=null;
 function renderMyCard(){
-  if(gestor())return;
+  if(!jogaEu())return;
   const p=me.carta&&byId(me.carta);const creating=!me.carta;
   const formOpen=creating||myEditing;
   $("#myForm").hidden=!formOpen;$("#myActions").hidden=formOpen||!p;$("#myPhotoRow").hidden=formOpen||!p;$("#myNote").hidden=formOpen||!p;
@@ -1010,10 +1012,10 @@ $("#mDelete").onclick=()=>{$("#mConfirm").hidden=false};$("#mNo").onclick=()=>{$
 $("#mYes").onclick=async()=>{try{await deleteDoc(pRef(editing));closeModal();toast("Jogador apagado")}catch(e){toast("Não consegui apagar")}};
 
 async function gerarConvite(papel,carta,out){
-  const code=novoCodigo();
-  try{await setDoc(doc(db,"convites",code),{time:teamId,papel,carta:carta||null,criadoPor:user.uid,criadoEm:serverTimestamp()});
+  const code=novoCodigo();const joga=!carta&&papel!=="atleta"&&!!$("#invJoga")?.checked;
+  try{await setDoc(doc(db,"convites",code),{time:teamId,papel,carta:carta||null,criadoPor:user.uid,criadoEm:serverTimestamp(),...(joga?{joga:true}:{})});
     const msg=`Entre no time ${team.nome} pelo app Rede Cheia Vôlei: crie sua conta e use o código ${code}`;
-    const passos=papel==="atleta"&&!carta?" Depois de entrar, crie a sua carta com nome, número, posição e foto.":"";
+    const passos=(papel==="atleta"||joga)&&!carta?" Depois de entrar, crie a sua carta com nome, número, posição e foto.":"";
     const full=msg+"."+passos+"\nBaixe o app: "+APK_URL;
     out.innerHTML=`<div class="code">${code}</div><p class="note" style="margin:6px 0">Vale uma vez. Envie para ${papel==="atleta"?"o atleta":"a pessoa"}.</p>
       <div class="row"><button class="btn primary" type="button" data-share>Enviar convite</button><button class="btn" type="button" data-copy>Copiar mensagem</button></div>`;
@@ -1046,7 +1048,7 @@ function renderMembers(){if(!me||!gestor())return;
     const carta=m.carta&&byId(m.carta);const self=m.uid===user.uid;
     return `<div class="li"><div class="av">${carta?.foto?`<img src="${carta.foto}" alt="">`:esc(initials(m.nome))}</div>
      <div class="who"><b>${esc(m.nome)}${self?" (você)":""}</b><span>${esc(m.email)}${carta?" · carta "+esc(carta.nome):""}</span></div>
-     ${pres&&!self?`<select data-uid="${m.uid}" aria-label="Papel de ${esc(m.nome)}" style="width:auto">${Object.keys(PAPEL).map(k=>`<option value="${k}" ${k===m.papel?"selected":""}>${PAPEL[k]}</option>`).join("")}<option value="__remover">Remover do time</option></select>`:`<span class="role">${nomePapel(m)}</span>`}
+     ${pres&&!self?`<select data-uid="${m.uid}" aria-label="Papel de ${esc(m.nome)}" style="width:auto">${Object.keys(PAPEL).map(k=>`<option value="${k}" ${k===m.papel?"selected":""}>${PAPEL[k]}</option>`).join("")}<option value="__remover">Remover do time</option></select>`:`<span class="role">${nomePapel(m)}</span>`}${EXTRA.membroExtra?EXTRA.membroExtra(m,pres,self):""}
     </div>`}).join("");
 }
 $("#members").addEventListener("change",async e=>{const s=e.target.closest("select");if(!s)return;

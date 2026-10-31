@@ -89,3 +89,12 @@
 .lg-tile b{font:800 18px/1 var(--f-display);text-transform:uppercase}
 .lg-tile span{font-size:13px;color:var(--muted)}
 .lg-tile .dot{position:absolute;top:12px;right:12px;width:10px;height:10px;border-radius:50%;background:var(--warn)}
+
+/* cargo + atleta */
+.tabs.t6{grid-template-columns:repeat(6,1fr)}
+.tabs.t6 button{font-size:10px;letter-spacing:.02em;padding-inline:2px}
+.inv-joga{border:0;padding:4px 2px;font-weight:700;width:100%}
+.joga-chk{border:0;padding:0 0 0 6px;font-size:12px;font-weight:800;color:var(--muted);flex:none;gap:6px}
+.joga-chk input{width:18px;height:18px}
+#members .li{flex-wrap:wrap}
+#members .who{min-width:110px}

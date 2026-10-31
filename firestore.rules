@@ -6,13 +6,13 @@ service cloud.firestore {
     function membroRef(t) { return /databases/$(database)/documents/times/$(t)/membros/$(request.auth.uid); }
     function membro(t) { return logado() && exists(membroRef(t)); }
     function papel(t) { return get(membroRef(t)).data.papel; }
-    function gestor(t) { return membro(t) && papel(t) in ['presidente', 'capitao', 'capita', 'professor']; }
+    function gestor(t) { return membro(t) && papel(t) in ['presidente', 'vicepresidente', 'capitao', 'capita', 'professor']; }
     function presidente(t) { return membro(t) && papel(t) == 'presidente'; }
     function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
     // presidente ou quem o presidente liberou para a tesouraria
     function fin(t) { return presidente(t) || (membro(t) && (papel(t) == 'tesoureiro' || get(membroRef(t)).data.get('financeiro', false) == true)); }
     // diretoria: vê as assembleias
-    function diretoria(t) { return gestor(t) || (membro(t) && papel(t) == 'tesoureiro'); }
+    function diretoria(t) { return gestor(t) || (membro(t) && papel(t) in ['tesoureiro', 'diretoria']); }
 
     match /usuarios/{uid} {
       allow read, write: if logado() && request.auth.uid == uid;

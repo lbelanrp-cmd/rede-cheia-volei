@@ -14,9 +14,16 @@ Object.assign(ICON,{
   avisos:'<path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/>',
   mais:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>'});
 Object.assign(LABEL,{agenda:"Agenda",rank:"Rank",avisos:"Avisos",mais:"Mais"});
-EXTRA.tabs=g=>g?["agenda","elenco","rank","avisos","mais"]:["agenda","carta","rank","avisos","mais"];
+// atleta + cargo: quem tem cargo também pode jogar (marcação "Também é atleta")
+EXTRA.joga=m=>m.papel==="atleta"||m.joga===true||(!GESTORES.includes(m.papel)&&m.joga!==false);
+EXTRA.tabs=g=>{const j=me&&EXTRA.joga(me);return g?(j?["agenda","elenco","carta","rank","avisos","mais"]:["agenda","elenco","rank","avisos","mais"]):(j?["agenda","carta","rank","avisos","mais"]:["agenda","rank","avisos","mais"])};
+EXTRA.membroExtra=(m,pres)=>pres&&m.papel!=="atleta"?`<label class="chk joga-chk"><input type="checkbox" data-joga="${m.uid}" ${EXTRA.joga(m)?"checked":""}>Atleta</label>`:"";
+$("#members").addEventListener("change",async e=>{const c=e.target.closest("[data-joga]");if(!c)return;
+  try{await updateDoc(doc(db,"times",teamId,"membros",c.dataset.joga),{joga:c.checked});toast(c.checked?"Agora também é atleta":"Não é mais atleta")}catch(err){c.checked=!c.checked;toast("Não consegui alterar")}});
+const invJogaVer=()=>{const l=$("#invJogaL");if(l)l.hidden=$("#invRole").value==="atleta"};
+$("#invRole").addEventListener("change",invJogaVer);
 Object.assign(EXTRA.parent,{presenca:"mais",sorteio:"mais",placar:"mais",time:"mais"});
-EXTRA.startView=()=>(!gestor()&&!me.carta)?"carta":"agenda";
+EXTRA.startView=()=>(!gestor()&&EXTRA.joga(me)&&!me.carta)?"carta":"agenda";
 
 /* ---- datas ---- */
 const pad2=n=>String(n).padStart(2,"0");
@@ -47,7 +54,7 @@ function instancias(){
     else if(a.data)map.set(a.id,{titulo:TIPOS[a.tipo]?.n||"",...a,fixo:a.id.startsWith("fx-")})});
   if(verAssemb())LG.assemb.forEach(a=>{if(a.data)map.set("as-"+a.id,{titulo:"Assembleia",...a,tipo:"assembleia",col:"assembleias",fixo:false})});
   return[...map.values()].sort((a,b)=>(a.data+(a.ini||"")).localeCompare(b.data+(b.ini||"")))}
-const verAssemb=()=>!!me&&(gestor()||me.papel==="tesoureiro");
+const verAssemb=()=>!!me&&(gestor()||me.papel==="tesoureiro"||me.papel==="diretoria");
 const agRef=id=>doc(db,"times",teamId,"agenda",id);
 const colDe=tipo=>tipo==="assembleia"?"assembleias":"agenda";
 const itemRef=it=>doc(db,"times",teamId,it.col==="assembleias"?"assembleias":"agenda",it.id);
