@@ -140,7 +140,7 @@ function abrirPago(u){
     <div class="fin-det"><span>Quem</span><b>${esc(pg.nomes||u.nomes)}</b><span>Referente a</span><b>${mesNome(pg.mes)}</b>
       <span>Valor</span><b>${brl(pg.valor)}</b><span>Pago em</span><b>${ddmm(pg.data)} · ${esc(pg.forma||"")}</b>
       ${pg.obs?`<span>Obs.</span><b>${esc(pg.obs)}</b>`:""}<span>Registrado por</span><b>${esc(pg.porNome||"")}</b></div>
-    <button class="btn" type="button" id="fiRecibo">Copiar recibo para o WhatsApp</button>
+    <button class="btn" type="button" id="fiRecibo">Enviar recibo</button>
     <button class="btn danger" type="button" id="fiDesfazer">Desfazer pagamento</button>
     <div class="err" id="fiErr"></div>`)}
 const compRef=id=>doc(db,"times",teamId,"fin_comp",id);
@@ -229,7 +229,7 @@ $("#finSheet").addEventListener("click",async e=>{
     $("#fiErr").textContent="";FIN.tmpFam.push({a,b});return renderFams()}
   if(e.target.id==="fiRecibo"){const pg=FIN.item.pg;
     const t=`Recibo – ${document.title}\nRecebemos de ${pg.nomes} o valor de ${brl(pg.valor)} referente à mensalidade de ${mesNome(pg.mes)}.\nPago em ${ddmm(pg.data)} via ${pg.forma}.`;
-    navigator.clipboard?.writeText(t).then(()=>toast("Recibo copiado"),()=>toast("Não consegui copiar"));return}
+    if(temNativo())compartilhar(t,"Enviar recibo");else copiar(t).then(ok=>toast(ok?"Recibo copiado":"Não consegui copiar"));return}
   if(e.target.id==="fiDesfazer"){const b=e.target;
     if(!b.dataset.arm){b.dataset.arm="1";b.textContent="Toque de novo para desfazer";return}
     try{await deleteDoc(doc(db,"times",teamId,"fin_lanc",FIN.item.pg.id));finFechar();toast("Pagamento desfeito")}catch(x){$("#fiErr").textContent="Não consegui desfazer."}}
@@ -285,4 +285,4 @@ $("#finCopiar").onclick=()=>{
   const pc={};doMes.filter(l=>l.tipo==="despesa").forEach(l=>{pc[l.cat||"Outros"]=(pc[l.cat||"Outros"]||0)+(+l.valor||0)});
   const det=Object.entries(pc).sort((a,b)=>b[1]-a[1]);
   const t2=t+(det.length?`\n\nDespesas por categoria:\n${det.map(([c,v])=>`• ${c}: ${brl(v)}`).join("\n")}`:"");
-  navigator.clipboard?.writeText(t2).then(()=>toast("Resumo copiado"),()=>toast("Não consegui copiar"))};
+  if(temNativo())compartilhar(t2,"Enviar resumo");else copiar(t2).then(ok=>toast(ok?"Resumo copiado":"Não consegui copiar"))};

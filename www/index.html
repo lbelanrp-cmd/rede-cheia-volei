@@ -440,7 +440,7 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
     <div class="list" id="listMensal"></div>
     <div class="grouplabel">Avulsos</div>
     <div class="list" id="listAvulso"></div>
-    <button class="btn" id="copyList" type="button">Copiar lista para o WhatsApp</button>
+    <button class="btn" id="copyList" type="button">Enviar lista no WhatsApp</button>
     <textarea id="copyFallback" hidden rows="8" style="width:100%;background:var(--panel-2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px"></textarea>
   </section>
 
@@ -723,6 +723,16 @@ async function abrirConta(){
     await bioAtivar(user.email,pw)}}
 $("#acctBtn").onclick=abrirConta;
 $("#acctModal").addEventListener("click",e=>{if(e.target.id==="acctModal")$("#acctModal").hidden=true});
+/* ---------------- Copiar e compartilhar (funciona no app instalado) ---------------- */
+const plug=(n,m,o)=>window.Capacitor.nativePromise(n,m,o||{});
+async function copiar(t){
+  if(temNativo()){try{await plug("Clipboard","write",{string:t});return true}catch(e){}}
+  try{await navigator.clipboard.writeText(t);return true}catch(e){}
+  try{const a=document.createElement("textarea");a.value=t;a.setAttribute("readonly","");a.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(a);a.select();a.setSelectionRange(0,t.length);const ok=document.execCommand("copy");a.remove();return ok}catch(e){return false}}
+async function compartilhar(t,titulo){
+  if(temNativo()){try{await plug("Share","share",{title:titulo||document.title,text:t,dialogTitle:titulo||"Enviar por…"});return true}catch(e){if(/cancel/i.test(String(e?.message||e)))return true}}
+  try{if(navigator.share){await navigator.share({title:titulo||document.title,text:t});return true}}catch(e){if(e?.name==="AbortError")return true}
+  window.location.href="https://wa.me/?text="+encodeURIComponent(t);return true}
 /* ---------------- Estado ---------------- */
 let user=null,teamId=null,me=null,team=null,players=[],members=[],unsubs=[],filter="todos",view=null;
 const gestor=()=>GESTORES.includes(me?.papel);
@@ -967,8 +977,9 @@ async function gerarConvite(papel,carta,out){
     const passos=papel==="atleta"&&!carta?" Depois de entrar, crie a sua carta com nome, número, posição e foto.":"";
     const full=msg+"."+passos+"\nBaixe o app: "+APK_URL;
     out.innerHTML=`<div class="code">${code}</div><p class="note" style="margin:6px 0">Vale uma vez. Envie para ${papel==="atleta"?"o atleta":"a pessoa"}.</p>
-      <div class="row"><a class="btn primary" href="https://wa.me/?text=${encodeURIComponent(full)}">Enviar no WhatsApp</a><button class="btn" type="button">Copiar mensagem</button></div>`;
-    out.querySelector("button").onclick=()=>{navigator.clipboard?.writeText(full).then(()=>toast("Mensagem copiada"),()=>toast("Copie o código acima"))};
+      <div class="row"><button class="btn primary" type="button" data-share>Enviar convite</button><button class="btn" type="button" data-copy>Copiar mensagem</button></div>`;
+    out.querySelector("[data-share]").onclick=()=>compartilhar(full,"Enviar convite");
+    out.querySelector("[data-copy]").onclick=async()=>toast(await copiar(full)?"Mensagem copiada. Cole no WhatsApp.":"Não consegui copiar. Envie o código "+code);
   }catch(e){out.innerHTML=`<p class="err">Não consegui gerar o código (${esc(e.code||"")}).</p>`}
 }
 $("#mInvite").onclick=()=>gerarConvite("atleta",editing,$("#mInvOut"));
@@ -1025,7 +1036,7 @@ $("#clearPres").onclick=async()=>{if(!clearArmed){clearArmed=true;$("#clearPres"
 $("#copyList").onclick=()=>{const conf=players.filter(p=>p.presente),pend=players.filter(p=>!p.presente);const d=new Date().toLocaleDateString("pt-BR");
   const txt=`🏐 ${team.nome} – ${d}\n\n✅ Confirmados (${conf.length})\n${conf.map((p,i)=>`${i+1}. ${p.nome}${p.tipo==="avulso"?" (avulso)":""}`).join("\n")}\n\n⏳ Pendentes\n${pend.map(p=>`- ${p.nome}`).join("\n")}`;
   const fbk=()=>{const t=$("#copyFallback");t.value=txt;t.hidden=false;t.select();toast("Selecione e copie o texto")};
-  if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Lista copiada"),fbk);else fbk()};
+  if(temNativo())compartilhar(txt,"Enviar lista");else copiar(txt).then(ok=>ok?toast("Lista copiada"):fbk())};
 
 /* ---------------- Sorteio ---------------- */
 const mode=()=>team?.modo||6;
