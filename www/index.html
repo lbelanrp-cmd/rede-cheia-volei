@@ -223,10 +223,34 @@ section.view{display:flex;flex-direction:column;gap:14px}
   body.on-placar .tabs, body.on-placar header.top, body.on-placar .placar-extra{display:none}
   body.on-placar .app{padding-block:4px;max-width:none;height:100%}
   body.on-placar #v-placar{height:100%}
-  body.on-placar .board{height:100%;gap:14px}
-  body.on-placar .side{justify-content:center}
-  body.on-placar .pts{font-size:min(42vh,34vw)}
+  body.on-placar .app{box-sizing:border-box;height:100dvh}
+  body.on-placar #v-placar{display:flex;flex-direction:column;gap:0}
+  body.on-placar .board{flex:1;min-height:0;height:auto;gap:10px;grid-template-columns:1fr auto 1fr}
+  body.on-placar .side{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:1fr auto;align-items:center;gap:6px;padding:8px 10px;min-height:0}
+  body.on-placar .side select,body.on-placar .side .pts{grid-column:1/-1}
+  body.on-placar .pts{font-size:min(50vh,27vw);padding:0;height:100%;min-height:0}
+  body.on-placar .minus{width:auto;padding:6px 18px}
+  body.on-placar .mid{display:flex}
 }
+.mid{display:none;flex-direction:column;justify-content:center;align-items:center;gap:10px}
+.mid button{width:54px;height:54px;border-radius:50%;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);display:grid;place-items:center;font-weight:800}
+.mid button svg{width:24px;height:24px}
+.mid small{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+/* miniquadra com rodízio */
+.quadra-box{display:flex;flex-direction:column;gap:8px}
+.quadra-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.quadra-top b{color:var(--fg)}
+.quadra{position:relative;width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--ca) 22%,#c9773a) 0 50%,color-mix(in srgb,var(--cb) 22%,#c9773a) 50% 100%);
+  border:3px solid rgba(255,255,255,.85);box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
+.quadra::before{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 2px);width:4px;background:#111a;box-shadow:0 0 0 1px #fff8}
+.quadra::after{content:"";position:absolute;top:0;bottom:0;left:33.3%;right:33.3%;border-left:2px solid #fff9;border-right:2px solid #fff9}
+.qp{position:absolute;width:19%;left:var(--x);top:var(--y);transform:translate(-50%,-50%);transition:left .6s cubic-bezier(.3,.8,.3,1),top .6s cubic-bezier(.3,.8,.3,1);z-index:2}
+.qp .card{pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+.qp .card,.qp .card *{animation:none!important}
+.qp .bola{position:absolute;right:-8%;top:-6%;width:34%;aspect-ratio:1;border-radius:50%;background:#fff;color:#111;display:grid;place-items:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.5);z-index:5}
+.qp .zn{position:absolute;left:-6%;bottom:6%;min-width:28%;padding:1px 4px;border-radius:6px;background:rgba(0,0,0,.65);color:#fff;font:800 10px var(--f-display);text-align:center;z-index:5}
+.quadra .vazio{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#fff;font-weight:700;text-shadow:0 1px 3px #000}
 
 /* ---------- Abas ---------- */
 .tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(13,20,32,.97);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:20}
@@ -475,12 +499,20 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
         <div class="sets">Sets <b id="setsA">0</b></div>
         <button class="minus" id="minA" type="button" data-gestor>−1</button>
       </div>
+      <div class="mid" data-gestor>
+        <button type="button" id="swapSides2" aria-label="Trocar lados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg></button>
+        <small>Trocar<br>lados</small>
+      </div>
       <div class="side" id="sideB">
         <select id="selB" aria-label="Time da direita"></select>
         <button class="pts" id="ptsB" type="button">0</button>
         <div class="sets">Sets <b id="setsB">0</b></div>
         <button class="minus" id="minB" type="button" data-gestor>−1</button>
       </div>
+    </div>
+    <div class="quadra-box placar-extra" id="quadraBox">
+      <div class="quadra-top"><span id="saqueInfo"></span><button class="btn ghost" id="saqueBtn" type="button" data-gestor hidden>Trocar quem saca</button></div>
+      <div class="quadra" id="quadra"></div>
     </div>
     <div class="row spread placar-extra">
       <span class="hist" id="hist">Nenhum set terminado</span>
@@ -569,6 +601,10 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
   <p id="bioLockMsg" class="note">Toque para desbloquear</p>
   <button class="btn ghost" type="button" id="bioOutra">Entrar com senha</button>
 </div>
+<div class="modal" id="ladoModal" hidden><div class="sheet">
+  <h3 id="ladoTit" style="margin:0 0 6px">Fim do set</h3><p class="note" id="ladoTxt" style="margin:0 0 14px">Trocar os times de lado?</p>
+  <div class="two"><button class="btn" type="button" id="ladoNao">Manter</button><button class="btn primary" type="button" id="ladoSim">Trocar de lado</button></div>
+</div></div>
 <div class="modal" id="acctModal" hidden><div class="sheet" id="acctSheet"></div></div>
 <div class="toast" id="toast" hidden></div>
 <div class="notices" id="notices" aria-live="polite"></div>
@@ -1096,6 +1132,32 @@ $("#teams").addEventListener("click",e=>{const c=e.target.closest(".card");if(c&
 /* ---------------- Placar ---------------- */
 const sc=()=>team?.placar||{a:0,b:0,sa:0,sb:0,ta:0,tb:1,hist:[],target:25};
 const tInfo=i=>sTeams()[i]||{name:"Time "+("AB"[i]||"?"),color:TEAMC[i]||TEAMC[0]};
+const outro=x=>x==="a"?"b":"a";
+/* rodízio: quem saca e quantas vezes cada lado girou, a partir da ordem dos pontos do set */
+function rodizio(s){let srv=s.s0||"a";const rot={a:0,b:0};
+  (s.log||[]).forEach(w=>{if(w!==srv){rot[w]++;srv=w}});return{srv,rot}}
+/* zonas: 1 fundo direita, 2 rede direita, 3 rede meio, 4 rede esquerda, 5 fundo esquerda, 6 fundo meio */
+const ZONAS={6:[1,2,3,4,5,6],5:[1,2,3,4,5],4:[1,2,4,5],3:[1,3,5],2:[1,4],1:[1]};
+const PREF={1:["LEV"],2:["PON"],3:["CEN"],4:["OPO","PON"],5:["PON","LIB"],6:["CEN","LIB"]};
+function escalacao(t){const ps=(t?.ids||[]).map(byId).filter(Boolean);const n=Math.min(6,ps.length);if(!n)return[];
+  const zs=ZONAS[n],livre=ps.slice(),out={};
+  const pega=f=>{const i=livre.findIndex(f);return i<0?null:livre.splice(i,1)[0]};
+  [[p=>1,"pos"],[p=>1,"pos2"]].forEach(([_,k])=>zs.forEach(z=>{if(out[z])return;for(const pos of PREF[z]||[]){const p=pega(x=>x[k]===pos);if(p){out[z]=p;break}}}));
+  zs.forEach(z=>{if(!out[z])out[z]=pega(()=>true)});return zs.map(z=>out[z]).filter(Boolean)}
+const XY={a:{4:[37,17],3:[37,50],2:[37,83],5:[13,17],6:[13,50],1:[13,83]},b:{2:[63,17],3:[63,50],4:[63,83],1:[87,17],6:[87,50],5:[87,83]}};
+let quadraSig="";
+function renderQuadra(s){const box=$("#quadra");if(!box)return;const R=rodizio(s);
+  box.style.setProperty("--ca",tInfo(s.ta).color);box.style.setProperty("--cb",tInfo(s.tb).color);
+  const esc6={a:escalacao(sTeams()[s.ta]),b:escalacao(sTeams()[s.tb])};
+  $("#saqueInfo").innerHTML=sTeams().length?`Saque: <b>${esc(tInfo(R.srv==="a"?s.ta:s.tb).name)}</b>`:"";
+  $("#saqueBtn").hidden=!gestor()||!!(s.log||[]).length||(s.a+s.b)>0||!sTeams().length;
+  if(!esc6.a.length&&!esc6.b.length){quadraSig="";box.innerHTML=`<div class="vazio">Sorteie os times para ver a quadra com o rodízio.</div>`;return}
+  const sig=["a","b"].map(l=>esc6[l].map(p=>p.id+":"+(p.foto||"").length+p.nome+ovr(p)).join(",")).join("|");
+  if(sig!==quadraSig){quadraSig=sig;box.innerHTML=["a","b"].map(l=>esc6[l].map(p=>`<div class="qp" data-l="${l}" data-id="${p.id}">${cardHTML(p,"mini")}<span class="zn"></span></div>`).join("")).join("")}
+  ["a","b"].forEach(l=>{const zs=ZONAS[esc6[l].length]||[],n=zs.length;
+    box.querySelectorAll(`.qp[data-l="${l}"]`).forEach((el,k)=>{const z=zs[((k-R.rot[l])%n+n)%n],[x,y]=XY[l][z]||[50,50];
+      el.style.setProperty("--x",x+"%");el.style.setProperty("--y",y+"%");el.querySelector(".zn").textContent=z;
+      const b=el.querySelector(".bola");if(R.srv===l&&z===1){if(!b)el.insertAdjacentHTML("beforeend",'<span class="bola" aria-label="Saque">🏐</span>')}else if(b)b.remove()})})}
 let lastSets=null;
 function renderScore(){const s=sc();const opts=(sTeams().length?sTeams():[tInfo(0),tInfo(1)]).map((t,i)=>`<option value="${i}">${esc(t.name)}</option>`).join("");
   if($("#selA").innerHTML!==opts){$("#selA").innerHTML=opts;$("#selB").innerHTML=opts}
@@ -1106,21 +1168,34 @@ function renderScore(){const s=sc();const opts=(sTeams().length?sTeams():[tInfo(
   const key=s.sa+"-"+s.sb;
   if(lastSets!==null&&key!==lastSets&&s.hist?.length){const last=s.hist[s.hist.length-1];const[a,b]=last.split("–").map(Number);
     $("#setBanner").innerHTML=`<span>${esc(tInfo(a>b?s.ta:s.tb).name)} venceu o set ${last}</span><span>Sets ${s.sa} × ${s.sb}</span>`;$("#setBanner").hidden=false}
-  if(!s.hist?.length)$("#setBanner").hidden=true;lastSets=key}
+  if(!s.hist?.length)$("#setBanner").hidden=true;lastSets=key;renderQuadra(s)}
 const saveScore=s=>updateDoc(teamRef(),{placar:s}).catch(()=>toast("Sem conexão: ponto não salvo"));
-function point(side,d){if(!gestor())return;const s=JSON.parse(JSON.stringify(sc()));s.hist=s.hist||[];
-  s[side]=Math.max(0,s[side]+d);
-  if((s.a>=s.target||s.b>=s.target)&&Math.abs(s.a-s.b)>=2){s[s.a>s.b?"sa":"sb"]++;s.hist.push(`${s.a}–${s.b}`);s.a=0;s.b=0}
-  team.placar=s;renderScore();saveScore(s)}
+const copia=()=>JSON.parse(JSON.stringify(sc()));
+function trocaLados(s){[s.a,s.b]=[s.b,s.a];[s.sa,s.sb]=[s.sb,s.sa];[s.ta,s.tb]=[s.tb,s.ta];s.hist=(s.hist||[]).map(h=>h.split("–").reverse().join("–"));
+  s.log=(s.log||[]).map(outro);s.s0=outro(s.s0||"a");return s}
+function perguntaLado(tit,txt){$("#ladoTit").textContent=tit;$("#ladoTxt").textContent=txt;$("#ladoModal").hidden=false}
+$("#ladoNao").onclick=()=>{$("#ladoModal").hidden=true};
+$("#ladoSim").onclick=()=>{$("#ladoModal").hidden=true;const s=trocaLados(copia());lastSets=s.sa+"-"+s.sb;team.placar=s;renderScore();saveScore(s)};
+function point(side,d){if(!gestor())return;const s=copia();s.hist=s.hist||[];s.log=s.log||[];s.s0=s.s0||"a";
+  const antes=Math.max(s.a,s.b);
+  if(d>0){s[side]++;s.log.push(side)}
+  else{if(s[side]<=0)return;s[side]--;const i=s.log.lastIndexOf(side);if(i>=0)s.log.splice(i,1)}
+  let pergunta=null;
+  if((s.a>=s.target||s.b>=s.target)&&Math.abs(s.a-s.b)>=2){const w=s.a>s.b?"a":"b";s[w==="a"?"sa":"sb"]++;s.hist.push(`${s.a}–${s.b}`);
+    pergunta=[`${tInfo(w==="a"?s.ta:s.tb).name} venceu o set ${s.a}–${s.b}`,"Trocar os times de lado para o próximo set?"];
+    s.a=0;s.b=0;s.log=[];s.s0=outro(s.s0)}
+  else if(d>0&&s.target===15&&antes===7&&Math.max(s.a,s.b)===8)pergunta=["8 pontos no tie-break","No set de 15 os times trocam de lado no 8º ponto. Trocar agora?"];
+  team.placar=s;renderScore();saveScore(s);if(pergunta)perguntaLado(...pergunta)}
 $("#ptsA").onclick=()=>point("a",1);$("#ptsB").onclick=()=>point("b",1);
 $("#minA").onclick=()=>point("a",-1);$("#minB").onclick=()=>point("b",-1);
 $("#selA").onchange=e=>updateDoc(teamRef(),{"placar.ta":+e.target.value});
 $("#selB").onchange=e=>updateDoc(teamRef(),{"placar.tb":+e.target.value});
 $("#target").onchange=e=>updateDoc(teamRef(),{"placar.target":+e.target.value});
-$("#swapSides").onclick=()=>{const s=JSON.parse(JSON.stringify(sc()));[s.a,s.b]=[s.b,s.a];[s.sa,s.sb]=[s.sb,s.sa];[s.ta,s.tb]=[s.tb,s.ta];s.hist=(s.hist||[]).map(h=>h.split("–").reverse().join("–"));lastSets=s.sa+"-"+s.sb;saveScore(s)};
+$("#swapSides").onclick=$("#swapSides2").onclick=()=>{const s=trocaLados(copia());lastSets=s.sa+"-"+s.sb;team.placar=s;renderScore();saveScore(s)};
+$("#saqueBtn").onclick=()=>{const s=copia();s.s0=outro(s.s0||"a");team.placar=s;renderScore();saveScore(s)};
 let resetArmed=false;
 $("#resetScore").onclick=()=>{if(!resetArmed){resetArmed=true;$("#resetScore").textContent="Confirmar?";setTimeout(()=>{resetArmed=false;$("#resetScore").textContent="Zerar jogo"},3000);return}
-  resetArmed=false;$("#resetScore").textContent="Zerar jogo";const s={...sc(),a:0,b:0,sa:0,sb:0,hist:[]};lastSets="0-0";saveScore(s)};
+  resetArmed=false;$("#resetScore").textContent="Zerar jogo";const s={...sc(),a:0,b:0,sa:0,sb:0,hist:[],log:[],s0:"a"};lastSets="0-0";team.placar=s;renderScore();saveScore(s)};
 $("#fsBtn").onclick=()=>{const d=document.documentElement;try{(document.fullscreenElement?document.exitFullscreen():d.requestFullscreen()).catch(()=>toast("Tela cheia indisponível aqui"))}catch(e){toast("Tela cheia indisponível aqui")}};
 /*@@EXTRA_JS@@*/
 </script>
