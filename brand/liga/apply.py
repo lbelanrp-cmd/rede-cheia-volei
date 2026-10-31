@@ -68,3 +68,9 @@ src = os.path.join(ROOT, "brand", "liga", "res")
 dst = os.path.join(ROOT, "resources", "android", "res")
 shutil.copytree(src, dst, dirs_exist_ok=True)
 print("Versão Liga da Justiça aplicada")
+
+# lembretes no celular: plugin só no app da Liga
+pk = os.path.join(ROOT, "package.json")
+d = json.load(open(pk, encoding="utf-8"))
+d["dependencies"]["@capacitor/local-notifications"] = ">=6.0.0 <7.0.0"
+json.dump(d, open(pk, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
