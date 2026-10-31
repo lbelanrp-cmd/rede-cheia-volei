@@ -1,10 +1,10 @@
 
 /* ================= LIGA: FINANCEIRO (só presidente e tesouraria) ================= */
-const FIN={subs:null,ok:false,cfg:null,lanc:[],mes:null,aba:"mens",filtro:"aberto",delArm:null,tmpFam:null,item:null,cat:null};
+const FIN={inf:[],pixPub:"",subs:null,ok:false,cfg:null,lanc:[],mes:null,aba:"mens",filtro:"aberto",delArm:null,tmpFam:null,item:null,cat:null};
 ICON.financeiro='<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/><path d="M6 10v5M18 10v5"/>';
 LABEL.financeiro="Financeiro";
 EXTRA.parent.financeiro="mais";
-const CFG_PADRAO=()=>({valorInd:60,valorFam:100,venc:10,familias:[],inicio:mesAtual()});
+const CFG_PADRAO=()=>({valorInd:60,valorFam:100,venc:10,familias:[],inicio:mesAtual(),chave:"rosanibelan@gmail.com",recebedor:"LIGA DA JUSTICA VOLEI",cidade:"BRASIL"});
 const CAT_DESP=["Quadra / aluguel","Material esportivo","Uniforme","Arbitragem","Evento / torneio","Transporte","Outros"];
 const CAT_REC=["Diária de avulso","Uniforme","Evento / torneio","Patrocínio","Doação","Outros"];
 const FORMAS=["Pix","Dinheiro","Cartão","Transferência"];
@@ -18,7 +18,7 @@ const mesNome=m=>{const[y,mm]=m.split("-").map(Number);const s=new Date(y,mm-1,1
 const mesSo=m=>mesNome(m).split(" ")[0];
 const ddmm=s=>s?`${s.slice(8,10)}/${s.slice(5,7)}`:"";
 const cfg=()=>({...CFG_PADRAO(),...(FIN.cfg||{})});
-const finAcesso=()=>!!me&&(me.papel==="presidente"||me.financeiro===true);
+const finAcesso=()=>!!me&&(me.papel==="presidente"||me.papel==="tesoureiro"||me.financeiro===true);
 const cfgRef=()=>doc(db,"times",teamId,"fin_config","geral");
 const lancCol=()=>collection(db,"times",teamId,"fin_lanc");
 
@@ -27,15 +27,30 @@ function syncFin(){
   const ok=finAcesso();
   if(ok&&!FIN.subs){
     FIN.mes=FIN.mes||mesAtual();
-    const a=onSnapshot(cfgRef(),s=>{FIN.cfg=s.exists()?s.data():null;FIN.ok=true;renderFin()},e=>console.warn("fin cfg",e));
+    const a=onSnapshot(cfgRef(),s=>{FIN.cfg=s.exists()?s.data():null;FIN.ok=true;publicarPix();renderFin()},e=>console.warn("fin cfg",e));
     const b=onSnapshot(lancCol(),s=>{FIN.lanc=s.docs.map(d=>({id:d.id,...d.data()}));renderFin()},e=>console.warn("fin lanc",e));
-    FIN.subs=[a,b];unsubs.push(()=>{a();b()});
+    let primeira=true;
+    const c=onSnapshot(collection(db,"times",teamId,"pag_informes"),s=>{
+      if(!primeira)s.docChanges().forEach(x=>{if(x.type!=="added"||x.doc.metadata.hasPendingWrites)return;const d=x.doc.data();
+        if(d.status==="pendente"&&d.uid!==user.uid){notify(`${d.nomes||d.nome} informou o Pix de ${mesSo(d.mes).toLowerCase()}. Confira no Financeiro.`,"financeiro");
+          if(typeof notificarSistema==="function")notificarSistema("Pix informado",`${d.nomes||d.nome} · ${brl(d.valor)}`,"inf-"+x.doc.id)}});
+      primeira=false;FIN.inf=s.docs.map(d=>({id:d.id,...d.data()}));renderFin()},e=>console.warn("fin informes",e));
+    FIN.subs=[a,b,c];unsubs.push(()=>{a();b();c()});
   }else if(!ok&&FIN.subs){
     FIN.subs.forEach(f=>f());FIN.subs=null;FIN.ok=false;FIN.cfg=null;FIN.lanc=[];
     if(view==="financeiro")go("mais");
   }
 }
-EXTRA.reset.push(()=>{FIN.subs=null;FIN.ok=false;FIN.cfg=null;FIN.lanc=[];FIN.mes=null});
+EXTRA.reset.push(()=>{FIN.subs=null;FIN.ok=false;FIN.cfg=null;FIN.lanc=[];FIN.mes=null;FIN.inf=[];FIN.pixPub=""});
+/* dados públicos para o atleta pagar (sem valores do caixa) */
+async function publicarPix(){
+  const c=cfg(),pub={chave:c.chave,recebedor:c.recebedor,cidade:c.cidade,valorInd:+c.valorInd,valorFam:+c.valorFam,venc:+c.venc,inicio:c.inicio,familias:c.familias||[]};
+  const k=JSON.stringify(pub);if(k===FIN.pixPub)return;FIN.pixPub=k;
+  try{await setDoc(doc(db,"times",teamId,"pix","config"),pub)}catch(e){FIN.pixPub="";console.warn("pix",e)}}
+const infPend=()=>FIN.inf.filter(i=>i.status==="pendente").sort((a,b)=>(a.data||"").localeCompare(b.data||""));
+async function criarInformesConfirmados(cartas,nomes,mes,valor,data,lancId){
+  const donos=[...new Set(cartas.map(c=>members.find(m=>m.carta===c)?.uid).filter(Boolean))];
+  for(const uid of donos){try{await addDoc(collection(db,"times",teamId,"pag_informes"),{uid,nome:members.find(m=>m.uid===uid)?.nome||"",cartas,nomes,mes,valor,data,status:"confirmado",lancId,origem:"tesouraria",em:serverTimestamp()})}catch(e){console.warn(e)}}}
 EXTRA.render.push(()=>{syncFin();renderFin()});
 
 /* ---- quem paga o quê ---- */
@@ -76,7 +91,11 @@ function renderFin(){
   $("#finProg").hidden=!us.length;
   const lista=$("#finLista"),topo=$("#finTopo");
   if(FIN.aba==="mens"){
-    topo.innerHTML=`<div class="lg-chips" id="finFiltro">${[["aberto","Em aberto"],["pagos","Pagos"],["todos","Todos"]].map(([k,n])=>`<button class="chip" data-f="${k}" aria-pressed="${FIN.filtro===k}" type="button">${n}</button>`).join("")}</div>`;
+    const pend=infPend();
+    topo.innerHTML=(pend.length?`<div class="fin-inf"><h3>Pix informados pelos atletas (${pend.length})</h3>
+      ${pend.map(i=>`<div class="r" data-inf="${i.id}"><div class="w"><b>${esc(i.nomes||i.nome)}</b><span>${mesNome(i.mes)} · ${brl(i.valor)} · informado em ${ddmm(i.data)}</span></div>
+        ${i.temFoto?`<button class="btn ghost" type="button" data-inf-ver>Comprovante</button>`:""}<button class="btn ghost" type="button" data-inf-no>Não achei</button><button class="btn primary" type="button" data-inf-ok>Confirmar</button></div>`).join("")}</div>`:"")+
+      `<div class="lg-chips" id="finFiltro">${[["aberto","Em aberto"],["pagos","Pagos"],["todos","Todos"]].map(([k,n])=>`<button class="chip" data-f="${k}" aria-pressed="${FIN.filtro===k}" type="button">${n}</button>`).join("")}</div>`;
     if(!us.length){lista.innerHTML=`<div class="empty">Nenhum mensalista no elenco. Abra a carta do jogador no Elenco e mude o tipo para <b>Mensalista</b>.</div>`;return}
     let rows=us.map((u,i)=>({u,s:st[i]}));
     if(FIN.filtro==="aberto")rows=rows.filter(r=>r.s!=="pago");else if(FIN.filtro==="pagos")rows=rows.filter(r=>r.s==="pago");
@@ -85,7 +104,7 @@ function renderFin(){
     lista.innerHTML=rows.length?rows.map(({u,s})=>{const pg=pagamento(u,m),ant=mesesAnteriores(u,m);
       return `<div class="fin-row st-${s}" data-key="${u.key}"><div class="fin-avs">${u.cartas.map(id=>`<span class="rk-av">${avatar(byId(id))}</span>`).join("")}</div>
       <div class="fin-who"><b>${esc(u.nomes)}</b><span><span class="fin-st">${LBL[s]}</span> · ${u.fam?"Família":"Individual"} ${brl(u.valor)}${ant?` · <em>${ant} ${ant===1?"mês anterior":"meses anteriores"} em aberto</em>`:""}</span></div>
-      ${pg?`<button type="button" class="fin-pill" data-act="ver">✓ ${ddmm(pg.data)}</button>`:`<button type="button" class="btn primary fin-rec" data-act="receber">Receber</button>`}</div>`}).join("")
+      ${pg?`<button type="button" class="fin-pill" data-act="ver">✓ ${ddmm(pg.data)}</button>`:infPend().some(i=>i.mes===m&&(i.cartas||[]).some(c=>u.cartas.includes(c)))?`<span class="fin-pill inf">Pix informado</span>`:`<button type="button" class="btn primary fin-rec" data-act="receber">Receber</button>`}</div>`}).join("")
       :`<div class="empty">${FIN.filtro==="aberto"?"Todo mundo pagou este mês.":"Nenhum pagamento registrado neste mês."}</div>`;
   }else{
     const tipo=FIN.aba==="desp"?"despesa":"receita",desp=tipo==="despesa";
@@ -108,7 +127,12 @@ function renderFin(){
 $("#finPrev").onclick=()=>{FIN.mes=mesAdd(FIN.mes,-1);FIN.cat=null;renderFin()};
 $("#finNext").onclick=()=>{FIN.mes=mesAdd(FIN.mes,1);FIN.cat=null;renderFin()};
 $("#finAba").addEventListener("click",e=>{const b=e.target.closest("button");if(b){FIN.aba=b.dataset.a;FIN.delArm=null;FIN.cat=null;renderFin()}});
-$("#finTopo").addEventListener("click",e=>{const f=e.target.closest("[data-f]");if(f){FIN.filtro=f.dataset.f;renderFin();return}
+$("#finTopo").addEventListener("click",async e=>{const f=e.target.closest("[data-f]");if(f){FIN.filtro=f.dataset.f;renderFin();return}
+  const r=e.target.closest("[data-inf]");if(r){const i=FIN.inf.find(x=>x.id===r.dataset.inf);if(!i)return;
+    if(e.target.closest("[data-inf-ver]"))return verComprovanteInf(i);
+    if(e.target.closest("[data-inf-ok]"))return confirmarInf(i,e.target);
+    if(e.target.closest("[data-inf-no]")){const b=e.target;if(!b.dataset.arm){b.dataset.arm="1";b.textContent="Tocar de novo";return}
+      try{await updateDoc(doc(db,"times",teamId,"pag_informes",i.id),{status:"recusado",porUid:user.uid});toast("Marcado como não encontrado")}catch(x){toast("Não consegui salvar")}return}}
   const ct=e.target.closest("[data-cat]");if(ct){const c=ct.dataset.cat||null;FIN.cat=FIN.cat===c?null:c;renderFin();return}
   if(e.target.closest("#finNovo"))abrirLanc(FIN.aba==="desp"?"despesa":"receita")});
 $("#finLista").addEventListener("click",async e=>{
@@ -117,6 +141,16 @@ $("#finLista").addEventListener("click",async e=>{
   if(a==="det"){const l=FIN.lanc.find(x=>x.id===b.dataset.id);if(l)abrirDet(l)}
 });
 
+async function confirmarInf(i,b){
+  b.disabled=true;
+  try{const r=await addDoc(lancCol(),{criadoPor:user.uid,porNome:me.nome||"",em:serverTimestamp(),tipo:"receita",cat:"mensalidade",mes:i.mes,cartas:i.cartas,nomes:i.nomes||i.nome,valor:+i.valor,forma:"Pix",data:i.data||hoje(),obs:"Informado pelo atleta no app",desc:`Mensalidade ${mesSo(i.mes).toLowerCase()} – ${i.nomes||i.nome}`,temFoto:false,infId:i.id});
+    await updateDoc(doc(db,"times",teamId,"pag_informes",i.id),{status:"confirmado",lancId:r?.id||"",porUid:user.uid});
+    const outros=(i.cartas||[]).map(c=>members.find(m=>m.carta===c)?.uid).filter(u=>u&&u!==i.uid);
+    if(outros.length)await criarInformesConfirmados(i.cartas.filter(c=>outros.includes(members.find(m=>m.carta===c)?.uid)),i.nomes||i.nome,i.mes,+i.valor,i.data||hoje(),r?.id||"");
+    toast("Pagamento confirmado")}catch(x){b.disabled=false;toast("Não consegui confirmar: "+(x.code||x.message))}}
+async function verComprovanteInf(i){
+  finAbrir(`${cab("Comprovante")}<p class="note" style="margin:0">${esc(i.nomes||i.nome)} · ${mesNome(i.mes)} · ${brl(i.valor)}</p><figure class="fin-comp" id="fiComp"><figcaption>Carregando…</figcaption></figure>`);FIN.item={modo:"ver"};
+  try{const d=await getDoc(doc(db,"times",teamId,"pag_comp",i.id));$("#fiComp").innerHTML=d.exists()?`<img src="${d.data().foto}" alt="Comprovante">`:"<figcaption>Sem comprovante.</figcaption>"}catch(x){$("#fiComp").innerHTML="<figcaption>Não consegui carregar.</figcaption>"}}
 /* ---- janelas ---- */
 const finAbrir=html=>{$("#finSheet").innerHTML=html;$("#finModal").hidden=false};
 const finFechar=()=>{$("#finModal").hidden=true;FIN.item=null};
@@ -201,10 +235,14 @@ function abrirConfig(){
       <label class="f">Plano família, 2 pessoas (R$)<input type="text" id="fcFam" inputmode="decimal" value="${num2(c.valorFam)}"></label></div>
     <div class="two"><label class="f">Dia do vencimento<input type="number" id="fcVenc" min="1" max="28" value="${+c.venc||10}"></label>
       <label class="f">Controle desde<input type="month" id="fcIni" value="${c.inicio}"></label></div>
+    <div class="box"><h3>Pix da Liga</h3><p class="note" style="margin:0">Usado para os atletas pagarem pelo app.</p>
+      <label class="f">Chave Pix<input type="text" id="fcChave" value="${esc(c.chave||"")}" autocomplete="off"></label>
+      <div class="two"><label class="f">Nome de quem recebe<input type="text" id="fcNome" maxlength="25" value="${esc(c.recebedor||"")}"></label>
+        <label class="f">Cidade<input type="text" id="fcCid" maxlength="15" value="${esc(c.cidade||"")}"></label></div></div>
     <div class="box"><h3>Planos família</h3><div id="fcFams"></div>
       <div class="two"><select id="fcA"></select><select id="fcB"></select></div>
       <button class="btn" type="button" id="fcAdd">Juntar no plano família</button></div>
-    ${pres?`<div class="box"><h3>Tesouraria</h3><p class="note" style="margin:0">Quem pode ver e mexer no financeiro, além de você.</p>
+    ${pres?`<div class="box"><h3>Tesouraria</h3><p class="note" style="margin:0">Quem pode ver e mexer no financeiro, além de você e de quem tem o cargo Tesoureiro(a).</p>
       ${members.filter(x=>x.papel!=="presidente").map(x=>`<label class="chk"><input type="checkbox" class="fcAc" value="${x.uid}" ${x.financeiro?"checked":""}><b>${esc(x.nome)}</b><em style="color:var(--muted)">${PAPEL[x.papel]||""}</em></label>`).join("")||'<p class="note">Nenhum outro membro no time ainda.</p>'}</div>`:""}
     <div class="err" id="fiErr"></div>
     <button class="btn primary" type="submit" id="fiSave">Salvar</button>`);
@@ -232,7 +270,9 @@ $("#finSheet").addEventListener("click",async e=>{
     if(temNativo())compartilhar(t,"Enviar recibo");else copiar(t).then(ok=>toast(ok?"Recibo copiado":"Não consegui copiar"));return}
   if(e.target.id==="fiDesfazer"){const b=e.target;
     if(!b.dataset.arm){b.dataset.arm="1";b.textContent="Toque de novo para desfazer";return}
-    try{await deleteDoc(doc(db,"times",teamId,"fin_lanc",FIN.item.pg.id));finFechar();toast("Pagamento desfeito")}catch(x){$("#fiErr").textContent="Não consegui desfazer."}}
+    try{const pid=FIN.item.pg.id;await deleteDoc(doc(db,"times",teamId,"fin_lanc",pid));
+      for(const i of FIN.inf.filter(x=>x.lancId===pid))await deleteDoc(doc(db,"times",teamId,"pag_informes",i.id)).catch(()=>{});
+      finFechar();toast("Pagamento desfeito")}catch(x){$("#fiErr").textContent="Não consegui desfazer."}}
 });
 $("#finSheet").addEventListener("input",e=>{if(e.target.closest(".fin-it")){lerItens();totalItens()}});
 $("#finSheet").addEventListener("change",async e=>{if(e.target.id!=="fiCam"&&e.target.id!=="fiGal")return;const f=e.target.files[0];e.target.value="";if(!f)return;
@@ -245,7 +285,8 @@ $("#finSheet").addEventListener("submit",async e=>{
       const valor=parseBRL($("#fiValor").value),data=$("#fiData").value;
       if(!(valor>0)){err.textContent="Digite um valor válido.";return}if(!data){err.textContent="Escolha a data.";return}
       b.disabled=true;
-      await addDoc(lancCol(),{...base,tipo:"receita",cat:"mensalidade",mes:FIN.mes,cartas:it.u.cartas,nomes:it.u.nomes,valor,forma:$("#fiForma").value,data,obs:$("#fiObs").value.trim(),desc:`Mensalidade ${mesSo(FIN.mes).toLowerCase()} – ${it.u.nomes}`});
+      const r=await addDoc(lancCol(),{...base,tipo:"receita",cat:"mensalidade",mes:FIN.mes,cartas:it.u.cartas,nomes:it.u.nomes,valor,forma:$("#fiForma").value,data,obs:$("#fiObs").value.trim(),desc:`Mensalidade ${mesSo(FIN.mes).toLowerCase()} – ${it.u.nomes}`});
+      await criarInformesConfirmados(it.u.cartas,it.u.nomes,FIN.mes,valor,data,r?.id||"");
       finFechar();toast("Recebimento registrado");
     }else if(it.modo==="lanc"){
       lerItens();const itens=it.itens.filter(x=>x.d||x.v);
@@ -266,7 +307,8 @@ $("#finSheet").addEventListener("submit",async e=>{
       const ind=parseBRL($("#fcInd").value),fam=parseBRL($("#fcFam").value),venc=Math.min(28,Math.max(1,parseInt($("#fcVenc").value)||10)),ini=$("#fcIni").value||mesAtual();
       if(!(ind>0)||!(fam>0)){err.textContent="Confira os valores.";return}
       b.disabled=true;
-      await setDoc(cfgRef(),{valorInd:ind,valorFam:fam,venc,inicio:ini,familias:FIN.tmpFam},{merge:true});
+      const chave=$("#fcChave").value.trim();if(!chave){err.textContent="Informe a chave Pix.";b.disabled=false;return}
+      await setDoc(cfgRef(),{valorInd:ind,valorFam:fam,venc,inicio:ini,familias:FIN.tmpFam,chave,recebedor:$("#fcNome").value.trim()||"LIGA DA JUSTICA VOLEI",cidade:$("#fcCid").value.trim()||"BRASIL"},{merge:true});
       if(me.papel==="presidente"){const bt=writeBatch(db);let n=0;
         document.querySelectorAll(".fcAc").forEach(c=>{const m=members.find(x=>x.uid===c.value);if(m&&!!m.financeiro!==c.checked){bt.update(doc(db,"times",teamId,"membros",m.uid),{financeiro:c.checked});n++}});
         if(n)await bt.commit()}

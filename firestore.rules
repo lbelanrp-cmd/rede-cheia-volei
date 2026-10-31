@@ -10,7 +10,9 @@ service cloud.firestore {
     function presidente(t) { return membro(t) && papel(t) == 'presidente'; }
     function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
     // presidente ou quem o presidente liberou para a tesouraria
-    function fin(t) { return presidente(t) || (membro(t) && get(membroRef(t)).data.get('financeiro', false) == true); }
+    function fin(t) { return presidente(t) || (membro(t) && (papel(t) == 'tesoureiro' || get(membroRef(t)).data.get('financeiro', false) == true)); }
+    // diretoria: vê as assembleias
+    function diretoria(t) { return gestor(t) || (membro(t) && papel(t) == 'tesoureiro'); }
 
     match /usuarios/{uid} {
       allow read, write: if logado() && request.auth.uid == uid;
@@ -62,6 +64,12 @@ service cloud.firestore {
       // Liga: agenda (treinos, eventos, assembleias) — só a comissão edita
       match /agenda/{a} {
         allow read: if membro(t);
+        allow create, update: if gestor(t) && request.resource.data.get('tipo', '') != 'assembleia';
+        allow delete: if gestor(t);
+      }
+      // Liga: assembleias — só a diretoria vê
+      match /assembleias/{a} {
+        allow read: if diretoria(t);
         allow write: if gestor(t);
       }
       // Liga: cada membro confirma ou desmarca apenas a própria presença no treino
@@ -88,6 +96,23 @@ service cloud.firestore {
       }
       match /fin_comp/{c} {
         allow read, write: if fin(t);
+      }
+      // Liga: dados do Pix que o atleta precisa para pagar (sem valores do caixa)
+      match /pix/{d} {
+        allow read: if membro(t);
+        allow write: if fin(t);
+      }
+      // Liga: pagamentos informados pelo atleta e confirmados pela tesouraria
+      match /pag_informes/{i} {
+        allow read: if fin(t) || (membro(t) && resource.data.uid == request.auth.uid);
+        allow create: if fin(t) || (membro(t) && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'pendente');
+        allow update: if fin(t);
+        allow delete: if fin(t) || (membro(t) && resource.data.uid == request.auth.uid && resource.data.status == 'pendente');
+      }
+      match /pag_comp/{i} {
+        allow read: if fin(t) || (membro(t) && get(/databases/$(database)/documents/times/$(t)/pag_informes/$(i)).data.uid == request.auth.uid);
+        allow create: if membro(t) && getAfter(/databases/$(database)/documents/times/$(t)/pag_informes/$(i)).data.uid == request.auth.uid;
+        allow delete: if fin(t);
       }
 
       match /jogadores/{j} {

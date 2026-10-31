@@ -44,9 +44,12 @@ rep('</style>', extra + '</style>')
 # funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
 here = os.path.dirname(os.path.abspath(__file__))
 rd = lambda n: open(os.path.join(here, n), encoding="utf-8").read()
-rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html"))
-rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js"))
-rep('</style>', rd("liga.css") + rd("fin.css") + '</style>')
+rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html") + rd("pix.html"))
+rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js") + rd("pix.js"))
+rep('</style>', rd("liga.css") + rd("fin.css") + rd("pix.css") + '</style>')
+# gerador de QR Code (MIT, Kazuhiko Arase) para o Pix
+shutil.copy(os.path.join(here, "qrcode.js"), os.path.join(ROOT, "www", "qrcode.js"))
+rep('<script type="module">', '<script src="qrcode.js"></script>\n<script type="module">')
 fs_imp = 'from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";'
 rep(fs_imp, fs_imp + '\nimport {query,where,orderBy,limit} ' + fs_imp)
 open(p, "w", encoding="utf-8").write(s)
@@ -55,6 +58,7 @@ c = os.path.join(ROOT, "capacitor.config.json")
 cfg = json.load(open(c, encoding="utf-8"))
 cfg["appId"] = "br.redecheia.ligadajustica"
 cfg["appName"] = "Liga da Justiça Vôlei"
+cfg["plugins"] = {"LocalNotifications": {"smallIcon": "ic_stat_bola", "iconColor": "#E8197D"}}
 json.dump(cfg, open(c, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
 src = os.path.join(ROOT, "brand", "liga", "res")

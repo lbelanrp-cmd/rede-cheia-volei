@@ -1,5 +1,5 @@
 /* ================= LIGA DA JUSTIÇA: agenda, presença em treinos, avisos e rank ================= */
-const LG={agenda:[],conf:[],avisos:[],ok:{ag:false,av:false},filtro:"todos",passado:false,aberto:new Set(),
+const LG={assemb:[],subA:null,migr:new Set(),agenda:[],conf:[],avisos:[],ok:{ag:false,av:false},filtro:"todos",passado:false,aberto:new Set(),
   rankAba:"freq",rankPer:"30",delArm:null,form:null,lastView:null,prevSeen:0};
 const FIXOS_PADRAO=[
   {dow:1,local:"Quadra do Furlan",ini:"19:00",fim:"22:00"},
@@ -42,10 +42,15 @@ function instancias(){
     const f=fixos.find(x=>x.dow===d.getDay());if(!f)continue;const id="fx-"+ymd(d);
     map.set(id,{id,tipo:"treino",titulo:"Treino",data:ymd(d),ini:f.ini,fim:f.fim,local:f.local,obs:f.obs||"",fixo:true})}
   LG.agenda.forEach(a=>{
+    if(a.tipo==="assembleia")return;
     if(map.has(a.id))map.set(a.id,{...map.get(a.id),...a,fixo:true});
     else if(a.data)map.set(a.id,{titulo:TIPOS[a.tipo]?.n||"",...a,fixo:a.id.startsWith("fx-")})});
+  if(verAssemb())LG.assemb.forEach(a=>{if(a.data)map.set("as-"+a.id,{titulo:"Assembleia",...a,tipo:"assembleia",col:"assembleias",fixo:false})});
   return[...map.values()].sort((a,b)=>(a.data+(a.ini||"")).localeCompare(b.data+(b.ini||"")))}
+const verAssemb=()=>!!me&&(gestor()||me.papel==="tesoureiro");
 const agRef=id=>doc(db,"times",teamId,"agenda",id);
+const colDe=tipo=>tipo==="assembleia"?"assembleias":"agenda";
+const itemRef=it=>doc(db,"times",teamId,it.col==="assembleias"?"assembleias":"agenda",it.id);
 const baseItem=(it,extra)=>({tipo:it.tipo,data:it.data,titulo:it.titulo||"",ini:it.ini||"",fim:it.fim||"",local:it.local||"",obs:it.obs||"",...extra});
 const confDe=id=>LG.conf.filter(c=>c.inst===id);
 const minhaConf=id=>LG.conf.find(c=>c.inst===id&&c.uid===user.uid);
@@ -88,7 +93,8 @@ function itemHTML(it){
 function renderAgenda(){
   const box=$("#lgAgendaList");if(!box||!me)return;
   $("#lgNovo").hidden=!gestor();
-  document.querySelectorAll("#lgFiltro .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===LG.filtro));
+  if(LG.filtro==="assembleia"&&!verAssemb())LG.filtro="todos";
+  document.querySelectorAll("#lgFiltro .chip").forEach(b=>{b.setAttribute("aria-pressed",b.dataset.f===LG.filtro);if(b.dataset.f==="assembleia")b.hidden=!verAssemb()});
   const t=hoje();let it=instancias();
   it=LG.passado?it.filter(i=>i.data<t).reverse():it.filter(i=>i.data>=t&&i.data<=ymd(addDays(new Date(),21)));
   if(LG.filtro!=="todos")it=it.filter(i=>i.tipo===LG.filtro);
@@ -116,10 +122,10 @@ $("#lgAgendaList").addEventListener("click",async e=>{
   if(!gestor())return;
   if(a==="edit")return abrirForm(it);
   if(a==="chamada")return abrirChamada(it);
-  if(a==="cancel"){try{await setDoc(agRef(id),baseItem(it,{cancelado:!it.cancelado}),{merge:true});toast(it.cancelado?"Reativado":"Cancelado. O time vai ser avisado.")}catch(err){toast("Não consegui salvar")}return}
+  if(a==="cancel"){try{await setDoc(itemRef(it),baseItem(it,{cancelado:!it.cancelado}),{merge:true});toast(it.cancelado?"Reativado":"Cancelado. O time vai ser avisado.")}catch(err){toast("Não consegui salvar")}return}
   if(a==="del"){
     if(LG.delArm!==id){LG.delArm=id;renderAgenda();setTimeout(()=>{if(LG.delArm===id){LG.delArm=null;renderAgenda()}},3500);return}
-    LG.delArm=null;try{await deleteDoc(agRef(id));toast("Excluído da agenda")}catch(err){toast("Não consegui excluir")}}
+    LG.delArm=null;try{await deleteDoc(itemRef(it));toast("Excluído da agenda")}catch(err){toast("Não consegui excluir")}}
 });
 
 /* ---- formulário de treino/evento/assembleia ---- */
@@ -132,7 +138,7 @@ function abrirForm(it){
   LG.form=it;
   abrirSheet(`<div class="row spread"><h2>${novo?"Adicionar à agenda":fx?"Editar treino":"Editar"}</h2><button class="btn ghost" type="button" data-x>Fechar</button></div>
     ${fx?`<p class="note" style="margin:0">Muda só o treino de ${diaLabel(v.data).toLowerCase()}. Os outros continuam no horário normal.</p>`:""}
-    <label class="f">Tipo<select id="lgTipo" ${fx?"disabled":""}>${Object.entries(TIPOS).map(([k,o])=>`<option value="${k}" ${k===v.tipo?"selected":""}>${o.n}</option>`).join("")}</select></label>
+    <label class="f">Tipo<select id="lgTipo" ${fx?"disabled":""}>${Object.entries(TIPOS).filter(([k])=>k!=="assembleia"||verAssemb()).map(([k,o])=>`<option value="${k}" ${k===v.tipo?"selected":""}>${o.n}</option>`).join("")}</select></label>
     <label class="f">Título<input type="text" id="lgTit" maxlength="50" value="${esc(v.titulo||"")}" placeholder="Ex.: Assembleia geral, Torneio de verão"></label>
     <div class="two"><label class="f">Data<input type="date" id="lgData" value="${esc(v.data)}" ${fx?"disabled":""}></label>
       <label class="f">Local<input type="text" id="lgLocal" maxlength="60" value="${esc(v.local||"")}" placeholder="Onde vai ser"></label></div>
@@ -173,8 +179,9 @@ $("#lgSheet").addEventListener("submit",async e=>{
   if(d.fim&&d.fim<=d.ini){err.textContent="O término precisa ser depois do início.";return}
   b.disabled=true;
   try{
-    if(!it)await addDoc(collection(db,"times",teamId,"agenda"),{...d,cancelado:false,criadoPor:user.uid,em:serverTimestamp()});
-    else await setDoc(agRef(it.id),d,{merge:true});
+    if(!it)await addDoc(collection(db,"times",teamId,colDe(d.tipo)),{...d,cancelado:false,criadoPor:user.uid,em:serverTimestamp()});
+    else if(colDe(d.tipo)===(it.col||"agenda"))await setDoc(itemRef(it),d,{merge:true});
+    else{await setDoc(doc(db,"times",teamId,colDe(d.tipo),it.id),{...baseItem(it,{}),...d,cancelado:!!it.cancelado,criadoPor:it.criadoPor||user.uid});await deleteDoc(itemRef(it))}
     fecharSheet();toast(it?"Salvo":"Adicionado à agenda")}
   catch(x){b.disabled=false;err.textContent="Não consegui salvar: "+(x.code||x.message)}
 });
@@ -242,6 +249,7 @@ $("#lgAvisos").addEventListener("click",async e=>{
 function renderMais(){
   const box=$("#lgMais");if(!box||!me)return;
   const t=[["presenca","Lista do jogo","Confirmados para o jogo"],["sorteio","Sorteio","Times equilibrados"],["placar","Placar","Pontos e sets"]];
+  if(me.carta)t.unshift(["pagar","Mensalidade","Pagar com Pix"]);
   if(gestor())t.push(["time","Time","Membros e convites"]);
   if(typeof finAcesso==="function"&&finAcesso())t.unshift(["financeiro","Financeiro","Mensalidades e despesas"]);
   box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile${v==="financeiro"?" fin":""}" data-v="${v}">${badges[v]?'<span class="dot"></span>':""}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("")}
@@ -251,8 +259,50 @@ $("#lgMais").addEventListener("click",e=>{const b=e.target.closest("[data-v]");i
 EXTRA.onMark=()=>{
   if(view==="avisos"&&LG.lastView!=="avisos"){LG.prevSeen=getSeen();marcarVisto();renderAvisos()}
   LG.lastView=view;renderMais()};
-EXTRA.render.push(()=>{renderAgenda();renderRank();renderAvisos();renderMais()});
-EXTRA.reset.push(()=>{LG.agenda=[];LG.conf=[];LG.avisos=[];LG.ok={ag:false,av:false};LG.lastView=null;LG.aberto.clear()});
+/* ---- assembleias: coleção própria, só diretoria (presidente, capitães, professor e tesouraria) ---- */
+function syncAssemb(){
+  const ok=verAssemb();
+  if(ok&&!LG.subA){let primeira=true;
+    const u=onSnapshot(collection(db,"times",teamId,"assembleias"),s=>{
+      if(!primeira)s.docChanges().forEach(c=>{if(c.doc.metadata.hasPendingWrites||c.type!=="added")return;const a=c.doc.data();
+        if(a.criadoPor!==user.uid&&a.data>=hoje())notify(`Assembleia na agenda: ${a.titulo} · ${diaLabel(a.data)}`,"agenda")});
+      primeira=false;LG.assemb=s.docs.map(d=>({id:d.id,...d.data()}));renderAgenda();lembretesDepois()},e=>console.warn("assembleias",e));
+    LG.subA=u;unsubs.push(()=>{u();LG.subA=null})}
+  else if(!ok&&LG.subA){LG.subA();LG.subA=null;LG.assemb=[]}}
+async function migrarAssembleias(){
+  if(!gestor())return;
+  for(const a of LG.agenda.filter(x=>x.tipo==="assembleia"&&!LG.migr.has(x.id))){LG.migr.add(a.id);
+    try{const {id,...dados}=a;await setDoc(doc(db,"times",teamId,"assembleias",id),dados);await deleteDoc(agRef(id))}catch(e){console.warn("migrar",e)}}}
+
+/* ---- lembretes no celular (notificações do Android) ---- */
+const LN=(m,o)=>plug("LocalNotifications",m,o);
+const nId=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
+let lembT=null;const lembretesDepois=()=>{clearTimeout(lembT);lembT=setTimeout(agendarLembretes,2500)};
+async function permNotif(){
+  try{const p=await LN("checkPermissions");if(p.display==="granted")return true;
+    if(LG.pediuNotif)return false;LG.pediuNotif=true;const r=await LN("requestPermissions");return r.display==="granted"}catch(e){return false}}
+async function agendarLembretes(){
+  if(!temNativo()||!me||!teamId)return;
+  const agora=Date.now(),lim=agora+14*864e5,lista=[];
+  instancias().filter(i=>!i.cancelado&&i.data&&i.ini).forEach(i=>{
+    const ini=pdate(i.data);const[h,mi]=i.ini.split(":").map(Number);ini.setHours(h,mi,0,0);const t=ini.getTime();if(t>lim)return;
+    const T=TIPOS[i.tipo]||TIPOS.evento,onde=i.local?` · ${i.local}`:"";
+    const add=(quando,chave,titulo,corpo)=>{if(quando>agora+60000)lista.push({id:nId(i.id+chave),title:titulo,body:corpo,schedule:{at:new Date(quando).toISOString(),allowWhileIdle:true},extra:{tela:"agenda"}})};
+    add(t-2*3600e3,"2h",`${T.n} às ${i.ini}`,`${i.titulo||T.n}${onde}`);
+    if(i.tipo!=="treino"){const v=pdate(i.data);v.setDate(v.getDate()-1);v.setHours(19,0,0,0);add(v.getTime(),"vespera",`Amanhã: ${i.titulo||T.n}`,`${i.ini}${onde}`)}});
+  lista.sort((a,b)=>a.schedule.at.localeCompare(b.schedule.at));const sel=lista.slice(0,48);
+  const assin=JSON.stringify(sel.map(n=>[n.id,n.schedule.at,n.title,n.body]));
+  let antes="";try{antes=localStorage.getItem("lg_lemb")||""}catch(e){}
+  if(assin===antes)return;
+  if(!(await permNotif()))return;
+  try{const old=JSON.parse(antes||"[]").map(x=>({id:x[0]}));if(old.length)await LN("cancel",{notifications:old});
+    if(sel.length)await LN("schedule",{notifications:sel});localStorage.setItem("lg_lemb",assin)}catch(e){console.warn("lembretes",e)}}
+async function notificarSistema(titulo,corpo,chave){
+  if(!temNativo()||!document.hidden||!(await permNotif()))return;
+  try{await LN("schedule",{notifications:[{id:nId(chave),title:titulo,body:corpo,schedule:{at:new Date(Date.now()+1500).toISOString(),allowWhileIdle:true}}]})}catch(e){}}
+
+EXTRA.render.push(()=>{syncAssemb();renderAgenda();renderRank();renderAvisos();renderMais()});
+EXTRA.reset.push(()=>{LG.agenda=[];LG.assemb=[];LG.subA=null;LG.conf=[];LG.avisos=[];LG.ok={ag:false,av:false};LG.lastView=null;LG.aberto.clear()});
 EXTRA.start.push(()=>{
   LG.ok={ag:false,av:false};
   const falha=nome=>e=>{console.warn(nome,e);if(e.code==="permission-denied")toast("Sem permissão para ler "+nome)};
@@ -265,13 +315,13 @@ EXTRA.start.push(()=>{
         notify(`${TIPOS[a.tipo]?.n||"Evento"} na agenda: ${a.titulo} · ${diaLabel(a.data)}`,"agenda");
       else if(a.cancelado&&!old?.cancelado)notify(`${a.titulo||"Treino"} de ${diaLabel(a.data).toLowerCase()} foi cancelado.`,"agenda");
     });
-    LG.agenda=s.docs.map(d=>({id:d.id,...d.data()}));LG.ok.ag=true;renderAgenda();renderRank()},falha("a agenda")));
+    LG.agenda=s.docs.map(d=>({id:d.id,...d.data()}));LG.ok.ag=true;renderAgenda();renderRank();migrarAssembleias();lembretesDepois()},falha("a agenda")));
   unsubs.push(onSnapshot(query(collection(db,"times",teamId,"confirmacoes"),where("data",">=",ymd(addDays(new Date(),-40)))),s=>{
     LG.conf=s.docs.map(d=>d.data());renderAgenda()},falha("as confirmações")));
   unsubs.push(onSnapshot(query(collection(db,"times",teamId,"avisos"),orderBy("em","desc"),limit(40)),s=>{
     const prev=new Set(LG.avisos.map(a=>a.id));
     LG.avisos=s.docs.map(d=>{const x=d.data({serverTimestamps:"estimate"});return{id:d.id,...x,ms:x.em?.toMillis?.()||Date.now()}});
-    if(LG.ok.av)LG.avisos.filter(a=>!prev.has(a.id)&&a.autorUid!==user.uid).forEach(a=>notify(`Novo aviso: ${a.titulo}`,"avisos"));
+    if(LG.ok.av)LG.avisos.filter(a=>!prev.has(a.id)&&a.autorUid!==user.uid).forEach(a=>{notify(`Novo aviso: ${a.titulo}`,"avisos");notificarSistema("Novo aviso da Liga",a.titulo,"aviso-"+a.id)});
     else if(view!=="avisos"&&LG.avisos[0]&&LG.avisos[0].ms>getSeen()&&LG.avisos[0].autorUid!==user.uid){badges.avisos=true;markTab()}
     LG.ok.av=true;if(view==="avisos")marcarVisto();renderAvisos()},falha("os avisos")));
   // atualiza o selo "Agora" e o "há x min" a cada minuto
