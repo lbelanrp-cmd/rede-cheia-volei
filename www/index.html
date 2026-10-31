@@ -255,6 +255,9 @@ input[type=range]{accent-color:var(--accent);width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 [hidden]{display:none!important}
+.team-pos{margin:-4px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
+.team-pos b{color:var(--fg)}
+.team-pos em{color:var(--warn);font-style:normal;font-weight:700}
 .acct{background:none;border:0;padding:4px 0;text-align:left;color:var(--muted);display:inline-flex;gap:6px;align-items:center;font:inherit;font-size:13px;max-width:100%}
 .acct svg{width:15px;height:15px;flex:none;opacity:.8}
 .bio-login{display:flex;align-items:center;justify-content:center;gap:8px}
@@ -382,7 +385,10 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
         <label class="f">Sexo<select id="myGen"><option value="M">Masculino</option><option value="F">Feminino</option></select></label>
         <label class="f">Nº da camisa<input type="text" id="myNum" inputmode="numeric" maxlength="2" placeholder="Opcional"></label>
       </div>
-      <label class="f">Posição<select id="myPos"><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
+      <div class="two">
+        <label class="f">Posição principal<select id="myPos"><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
+        <label class="f">2ª posição<select id="myPos2"><option value="">Nenhuma</option><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
+      </div>
       <div class="photoRow">
         <label class="btn pbtn" for="myCam2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Tirar foto</label>
         <label class="btn pbtn" for="myGal2">Galeria</label>
@@ -522,8 +528,9 @@ input[type=email],input[type=password]{background:var(--panel-2);border:1px soli
     <label class="f">Nome<input type="text" id="fName" maxlength="18" required placeholder="Ex.: Carla"></label>
     <div class="two">
       <label class="f">Sexo<select id="fGender"><option value="M">Masculino</option><option value="F">Feminino</option></select></label>
-      <label class="f">Posição<select id="fPos"><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
+      <label class="f">Posição principal<select id="fPos"><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
     </div>
+    <label class="f">2ª posição (opcional)<select id="fPos2"><option value="">Nenhuma</option><option value="PON">Ponteiro(a)</option><option value="OPO">Oposto(a)</option><option value="CEN">Central</option><option value="LEV">Levantador(a)</option><option value="LIB">Líbero</option></select></label>
     <div class="two">
       <label class="f">Tipo<select id="fType"><option value="mensal">Mensalista</option><option value="avulso">Avulso</option></select></label>
       <label class="f">Nº da camisa<input type="text" id="fNum" inputmode="numeric" maxlength="2" placeholder="Opcional"></label>
@@ -883,7 +890,7 @@ function renderMyCard(){
   } else $("#myCard").innerHTML=p?cardHTML(p):`<div class="empty">Carregando sua carta…</div>`;
 }
 function fillMyForm(){const p=me.carta&&byId(me.carta);
-  $("#myName2").value=p?.nome||me.nome||"";$("#myGen").value=p?.genero||"M";$("#myPos").value=p?.pos||"PON";$("#myNum").value=p?.numero||"";
+  $("#myName2").value=p?.nome||me.nome||"";$("#myGen").value=p?.genero||"M";$("#myPos").value=p?.pos||"PON";$("#myPos2").value=p?.pos2||"";$("#myNum").value=p?.numero||"";
   myPhoto=null;$("#myPhotoOk").textContent=p?.foto?"Foto atual mantida":"";$("#myErr").textContent=""}
 $("#myEdit").onclick=()=>{myEditing=true;fillMyForm();renderMyCard()};
 $("#myCancel").onclick=()=>{myEditing=false;myPhoto=null;renderMyCard()};
@@ -893,7 +900,7 @@ $("#myForm").addEventListener("input",e=>{if(e.target.type!=="file")renderMyCard
 $("#myForm").addEventListener("submit",async e=>{e.preventDefault();
   const nome=$("#myName2").value.trim();$("#myErr").textContent="";
   if(!nome){$("#myErr").textContent="Digite o seu nome.";return}
-  const dados={nome,genero:$("#myGen").value,pos:$("#myPos").value,numero:$("#myNum").value.replace(/\D/g,"")};
+  const dados={nome,genero:$("#myGen").value,pos:$("#myPos").value,pos2:$("#myPos2").value===$("#myPos").value?"":$("#myPos2").value,numero:$("#myNum").value.replace(/\D/g,"")};
   const b=$("#mySave");b.disabled=true;
   try{
     if(!me.carta){
@@ -924,10 +931,10 @@ $("#filterRow").addEventListener("click",e=>{const b=e.target.closest(".chip");i
 let editing=null,draft=null;
 $("#sliders").innerHTML=ATTR.map((a,i)=>`<label class="sl" title="${a[1]}"><span>${a[0]}</span><input type="range" min="30" max="99" id="fa${i}" aria-label="${a[1]}"><output id="fo${i}"></output></label>`).join("");
 function openModal(id){if(!gestor())return;
-  editing=id;const p=id?byId(id):{nome:"",genero:"M",pos:"PON",tipo:"avulso",numero:"",attrs:[60,60,60,60,60,60],foto:"",presente:false};
+  editing=id;const p=id?byId(id):{nome:"",genero:"M",pos:"PON",pos2:"",tipo:"avulso",numero:"",attrs:[60,60,60,60,60,60],foto:"",presente:false};
   draft=JSON.parse(JSON.stringify(p));delete draft.id;
   $("#mTitle").textContent=id?"Editar carta":"Novo jogador";
-  $("#fName").value=draft.nome;$("#fGender").value=draft.genero;$("#fPos").value=draft.pos;$("#fType").value=draft.tipo;$("#fNum").value=draft.numero||"";
+  $("#fName").value=draft.nome;$("#fGender").value=draft.genero;$("#fPos").value=draft.pos;$("#fPos2").value=draft.pos2||"";$("#fType").value=draft.tipo;$("#fNum").value=draft.numero||"";
   draft.attrs.forEach((v,i)=>{$("#fa"+i).value=v;$("#fo"+i).textContent=v});
   $("#mDelete").hidden=!id;$("#mConfirm").hidden=true;$("#linkBox").hidden=!id;$("#mInvOut").innerHTML="";
   if(id){const m=members.find(x=>x.carta===id);
@@ -935,7 +942,7 @@ function openModal(id){if(!gestor())return;
     $("#mInvite").hidden=!!m;}
   renderPreview();$("#modal").hidden=false;
 }
-function renderPreview(){draft.nome=$("#fName").value||"Nome";draft.genero=$("#fGender").value;draft.pos=$("#fPos").value;draft.tipo=$("#fType").value;draft.numero=$("#fNum").value.replace(/\D/g,"");
+function renderPreview(){draft.nome=$("#fName").value||"Nome";draft.genero=$("#fGender").value;draft.pos=$("#fPos").value;draft.pos2=$("#fPos2").value===draft.pos?"":$("#fPos2").value;draft.tipo=$("#fType").value;draft.numero=$("#fNum").value.replace(/\D/g,"");
   $("#mPreview").innerHTML=cardHTML({...draft,id:"prev"})}
 $("#pform").addEventListener("input",e=>{const m=e.target.id.match(/^fa(\d)$/);if(m){draft.attrs[+m[1]]=+e.target.value;$("#fo"+m[1]).textContent=e.target.value}if(e.target.type!=="file")renderPreview()});
 ["#fCam","#fPhoto"].forEach(sel=>$(sel).addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
@@ -944,7 +951,7 @@ $("#fNoPhoto").onclick=()=>{draft.foto="";renderPreview()};
 $("#mPreview").addEventListener("click",e=>{if(e.target.closest(".photo"))$("#fCam").click()});
 $("#pform").addEventListener("submit",async e=>{e.preventDefault();renderPreview();draft.nome=$("#fName").value.trim();if(!draft.nome)return;
   $("#mSave").disabled=true;
-  try{if(editing)await updateDoc(pRef(editing),{nome:draft.nome,genero:draft.genero,pos:draft.pos,tipo:draft.tipo,numero:draft.numero||"",attrs:draft.attrs,foto:draft.foto||"",avaliado:true});
+  try{if(editing)await updateDoc(pRef(editing),{nome:draft.nome,genero:draft.genero,pos:draft.pos,pos2:draft.pos2||"",tipo:draft.tipo,numero:draft.numero||"",attrs:draft.attrs,foto:draft.foto||"",avaliado:true});
     else await addDoc(collection(db,"times",teamId,"jogadores"),{...draft,foto:draft.foto||"",presente:false,avaliado:true});
     closeModal();toast("Carta salva")}catch(err){toast("Não consegui salvar: "+(err.code||""))}
   $("#mSave").disabled=false});
@@ -1001,7 +1008,7 @@ function renderPres(){
   const mine=me.carta;
   const row=p=>{const can=gestor()||p.id===mine;
     return `<div class="li"><div class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</div>
-   <div class="who"><b>${esc(p.nome)}${p.id===mine?" (você)":""}</b><span>${POSN[p.pos]} · ${p.genero}</span></div>
+   <div class="who"><b>${esc(p.nome)}${p.id===mine?" (você)":""}</b><span>${POSN[p.pos]}${p.pos2?" / "+POSN[p.pos2]:""} · ${p.genero}</span></div>
    <button type="button" class="toggle ${p.presente?"on":""}" data-id="${p.id}" ${can?"":"disabled"}>${p.presente?"✓ Confirmado":"Pendente"}</button></div>`};
   const m=players.filter(p=>p.tipo==="mensal"),a=players.filter(p=>p.tipo==="avulso");
   $("#listMensal").innerHTML=m.map(row).join("")||`<div class="li note">Nenhum mensalista</div>`;
@@ -1027,6 +1034,13 @@ function renderDrawInfo(){const conf=players.filter(p=>p.presente);const f=conf.
   $("#drawInfo").textContent=conf.length<4?"Confirme pelo menos 4 jogadores na Lista.":`${conf.length} confirmados (${f} mulheres) → ${n} times de ${mode()}. Mesmo número de mulheres por time e notas equilibradas.`}
 $("#modeSeg").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b||!gestor())return;const m=+b.dataset.m;
   try{await updateDoc(teamRef(),{modo:m,"placar.target":m===4?21:25})}catch(err){toast("Não consegui mudar o modo")}});
+/* equilíbrio de posições no sorteio: conta a posição principal (1) e a 2ª posição (0,6) */
+const POS_PESO={LEV:30,LIB:10,CEN:8,OPO:6,PON:4};
+function cobertura(ids){const c={LEV:0,LIB:0,CEN:0,OPO:0,PON:0};ids.forEach(id=>{const p=byId(id);if(!p)return;c[p.pos]=(c[p.pos]||0)+1;if(p.pos2&&p.pos2!==p.pos)c[p.pos2]=(c[p.pos2]||0)+.6});return c}
+function custoPos(T){const cs=T.map(t=>cobertura(t.ids));let pen=0;
+  for(const k in POS_PESO){const tot=cs.reduce((s,c)=>s+c[k],0),ideal=tot/T.length;cs.forEach(c=>{pen+=POS_PESO[k]*(c[k]-ideal)**2});
+    if(k==="LEV"&&tot>=T.length*.6)cs.forEach(c=>{if(c.LEV<.5)pen+=250})}
+  return pen}
 async function draw(){
   const conf=players.filter(p=>p.presente);if(conf.length<4){toast("Poucos confirmados");return}
   const md=mode(),nT=Math.max(2,Math.floor(conf.length/md)),size=Math.min(md,Math.floor(conf.length/nT));
@@ -1041,9 +1055,12 @@ async function draw(){
     pool.sort((a,b)=>a.sum-b.sum||a.ids.length-b.ids.length);const t=pool[0];t.ids.push(p.id);t.sum+=ovr(p);if(p.genero==="F")t.f++})};
   place(fIn.slice(0,wPer*nT),wPer);place(fIn.slice(wPer*nT),null);place(mIn,null);
   const spread=()=>{const s=T.map(t=>t.sum);return Math.max(...s)-Math.min(...s)};
-  for(let it=0;it<200;it++){let best=null,bv=spread();
-    for(let i=0;i<nT;i++)for(let j=i+1;j<nT;j++)for(const a of T[i].ids)for(const b of T[j].ids){const pa=byId(a),pb=byId(b);if(pa.genero!==pb.genero)continue;const d=ovr(pa)-ovr(pb);
-      T[i].sum-=d;T[j].sum+=d;const v=spread();T[i].sum+=d;T[j].sum-=d;if(v<bv-.01){bv=v;best=[i,j,a,b,d]}}
+  const custo=()=>spread()+custoPos(T);
+  for(let it=0;it<200;it++){let best=null,bv=custo();
+    for(let i=0;i<nT;i++)for(let j=i+1;j<nT;j++)for(let ia=0;ia<T[i].ids.length;ia++)for(let jb=0;jb<T[j].ids.length;jb++){
+      const a=T[i].ids[ia],b=T[j].ids[jb],pa=byId(a),pb=byId(b);if(pa.genero!==pb.genero)continue;const d=ovr(pa)-ovr(pb);
+      T[i].ids[ia]=b;T[j].ids[jb]=a;T[i].sum-=d;T[j].sum+=d;const v=custo();
+      T[i].ids[ia]=a;T[j].ids[jb]=b;T[i].sum+=d;T[j].sum-=d;if(v<bv-.01){bv=v;best=[i,j,a,b,d]}}
     if(!best)break;const[i,j,a,b,d]=best;T[i].ids[T[i].ids.indexOf(a)]=b;T[j].ids[T[j].ids.indexOf(b)]=a;T[i].sum-=d;T[j].sum+=d}
   const teams=T.map((t,i)=>({name:"Time "+"ABCDEF"[i],color:TEAMC[i%TEAMC.length],ids:t.ids}));
   selfDrawAt=Date.now();
@@ -1055,6 +1072,9 @@ function renderTeams(){const box=$("#teams"),teams=sTeams(),bench=team?.sorteio?
   if(!teams.length){box.innerHTML=`<p class="note">${gestor()?"Os times aparecem aqui depois do sorteio.":"A comissão ainda não sorteou os times."}</p>`;return}
   box.innerHTML=teams.map(t=>{const ps=t.ids.map(byId).filter(Boolean).sort((a,b)=>ovr(b)-ovr(a));const sum=ps.reduce((s,p)=>s+ovr(p),0);
     return `<div class="team" style="--tc:${t.color}"><header><h3>${t.name}</h3><div class="meta">Média <b>${ps.length?(sum/ps.length).toFixed(1):"–"}</b><br>${ps.filter(p=>p.genero==="F").length} mulheres · ${ps.length} jogadores</div></header>
+     ${(()=>{const lev=ps.filter(p=>p.pos==="LEV"),lev2=ps.filter(p=>p.pos!=="LEV"&&p.pos2==="LEV");
+       const cont=["LEV","PON","OPO","CEN","LIB"].map(k=>{const n=ps.filter(p=>p.pos===k).length;return n?n+" "+k:""}).filter(Boolean).join(" · ");
+       return `<p class="team-pos">${lev.length?`Levantador: <b>${lev.map(p=>esc(p.nome)).join(", ")}</b>`:lev2.length?`Levantador: <b>${lev2.map(p=>esc(p.nome)).join(", ")}</b> (2ª posição)`:"<em>Sem levantador</em>"}<br>${cont}</p>`})()}
      <div class="grid">${ps.map(p=>cardHTML(p,"mini")).join("")}</div></div>`}).join("")+
     (bench.length?`<div class="bench"><div class="grouplabel">Na espera</div><p style="margin:6px 0 0">${bench.map(byId).filter(Boolean).map(p=>esc(p.nome)).join(", ")}</p></div>`:"")}
 $("#teams").addEventListener("click",e=>{const c=e.target.closest(".card");if(c&&gestor())openModal(c.dataset.id)});

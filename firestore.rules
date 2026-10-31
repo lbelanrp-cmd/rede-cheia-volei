@@ -100,12 +100,12 @@ service cloud.firestore {
               && request.resource.data.avaliado == false
               && request.resource.data.presente == false
               && request.resource.data.tipo == 'avulso'
-              && request.resource.data.keys().hasOnly(['nome', 'genero', 'pos', 'numero', 'foto', 'tipo', 'attrs', 'presente', 'avaliado', 'donoUid']));
+              && request.resource.data.keys().hasOnly(['nome', 'genero', 'pos', 'pos2', 'numero', 'foto', 'tipo', 'attrs', 'presente', 'avaliado', 'donoUid']));
         allow delete: if gestor(t);
         // comissão edita tudo; atleta edita os próprios dados, foto e presença, nunca os atributos
         allow update: if gestor(t)
           || (membro(t) && get(membroRef(t)).data.carta == j
-              && mudou().hasOnly(['foto', 'presente', 'nome', 'numero', 'pos', 'genero']));
+              && mudou().hasOnly(['foto', 'presente', 'nome', 'numero', 'pos', 'pos2', 'genero']));
       }
     }
   }
