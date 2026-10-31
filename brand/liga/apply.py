@@ -11,6 +11,9 @@ def rep(a, b, count=1):
     s = s.replace(a, b) if count == 0 else s.replace(a, b, count)
 
 rep('<meta name="theme-color" content="#0d1420">', '<meta name="theme-color" content="#08080b">')
+# cargo Tesoureiro(a): só na Liga
+rep('<option value="professor" data-pres>Professor</option>', '<option value="professor" data-pres>Professor</option><option value="tesoureiro" data-pres>Tesoureiro(a)</option>')
+rep('professor:"Professor",atleta', 'professor:"Professor",tesoureiro:"Tesoureiro(a)",atleta')
 rep('<title>Rede Cheia Vôlei</title>', '<title>Liga da Justiça Vôlei</title>')
 rep('--bg:#0d1420; --panel:#151f30; --panel-2:#1c2940; --line:#2a3a56;',
     '--bg:#08080b; --panel:#15131a; --panel-2:#1f1b25; --line:#3a3343;')
