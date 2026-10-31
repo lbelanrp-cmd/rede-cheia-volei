@@ -12,8 +12,12 @@ def rep(a, b, count=1):
 
 rep('<meta name="theme-color" content="#0d1420">', '<meta name="theme-color" content="#08080b">')
 # cargo Tesoureiro(a): só na Liga
-rep('<option value="professor" data-pres>Professor</option>', '<option value="professor" data-pres>Professor</option><option value="tesoureiro" data-pres>Tesoureiro(a)</option>')
-rep('professor:"Professor",atleta', 'professor:"Professor",tesoureiro:"Tesoureiro(a)",atleta')
+# Liga mantém todos os cargos (presidente, professor e tesoureiro)
+rep('<option value="capita" data-pres>Capitã</option></select>', '<option value="capita" data-pres>Capitã</option><option value="professor" data-pres>Professor</option><option value="tesoureiro" data-pres>Tesoureiro(a)</option><option value="presidente" data-pres>Presidente</option></select>')
+rep('const PAPEL={capitao:"Capitão",capita:"Capitã",atleta:"Atleta"};', 'const PAPEL={presidente:"Presidente",capitao:"Capitão",capita:"Capitã",professor:"Professor",tesoureiro:"Tesoureiro(a)",atleta:"Atleta"};')
+rep('const nomePapel=m=>!m?"":m.papel==="presidente"||m.papel==="professor"?(m.titulo==="capita"?"Capitã":"Capitão"):PAPEL[m.papel]||m.papel;', 'const nomePapel=m=>!m?"":PAPEL[m.papel]||m.papel;')
+rep('Quem cria o time é o capitão principal: convida os outros capitães e pode excluir o time.', 'Quem cria o time vira o presidente.')
+rep('<select id="obTitulo" aria-label="Você é"><option value="capitao">Sou capitão</option><option value="capita">Sou capitã</option></select>', '')
 rep('<title>Rede Cheia Vôlei</title>', '<title>Liga da Justiça Vôlei</title>')
 rep('--bg:#0d1420; --panel:#151f30; --panel-2:#1c2940; --line:#2a3a56;',
     '--bg:#08080b; --panel:#15131a; --panel-2:#1f1b25; --line:#3a3343;')
