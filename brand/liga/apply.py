@@ -70,7 +70,8 @@ json.dump(cfg, open(c, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
 src = os.path.join(ROOT, "brand", "liga", "res")
 dst = os.path.join(ROOT, "resources", "android", "res")
-shutil.copytree(src, dst, dirs_exist_ok=True)
+shutil.rmtree(dst, ignore_errors=True)  # ícones e splash da Liga substituem os do Rede Cheia
+shutil.copytree(src, dst)
 print("Versão Liga da Justiça aplicada")
 
 # lembretes no celular: plugin só no app da Liga
