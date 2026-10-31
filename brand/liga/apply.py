@@ -37,18 +37,8 @@ body{background:radial-gradient(90% 45% at 0% 0%,rgba(232,25,125,.22),transparen
 .notice{border-color:#2fbfa8}
 .notice svg{color:#2fbfa8}
 /* carta Diamante nas cores da Liga */
-.tier-craque{--glow:rgba(232,25,125,.8);--d1:#2fbfa8;--d2:#e8197d;--d3:#ff5fae;--d4:#127a6c}
-.tier-craque .face{background:linear-gradient(165deg,#2fbfa8 0%,#127a6c 38%,#a3105a 70%,#e8197d 100%)!important}
-.tier-craque .frame{background:linear-gradient(110deg,#ffffff,#e8197d 18%,#2fbfa8 36%,#ffffff 54%,#e8197d 72%,#2fbfa8 90%)!important;background-size:250% 100%!important}
+.tier-craque{--d1:#7fffe9;--d2:#e8197d;--d3:#2fbfa8;--d4:#2a0620;--m1:#ffffff;--m3:#e8197d;--ink:#ffffff;--ink2:rgba(255,255,255,.85);--glow:rgba(232,25,125,.8)}
 .tier-craque .crest{background:#fff;color:#e8197d}
-.tier-craque .face::after{opacity:.08!important}
-.tier-craque .rays{opacity:.45}
-.tier-craque .tex{opacity:.4!important}
-.tier-craque .st span,.tier-craque .sub,.tier-craque .foot{color:rgba(255,255,255,.85)!important;text-shadow:0 0 .6cqw rgba(0,0,0,.9)!important}
-.tier-craque .aura{background:radial-gradient(closest-side,rgba(232,25,125,.8),rgba(47,191,168,.45),transparent)!important}
-.tier-craque .pt{box-shadow:0 0 2cqw 1cqw rgba(232,25,125,.9)!important}
-.tier-craque .spark{background:linear-gradient(135deg,#fff,#c8fff4 40%,#ffc0dd)!important}
-.tier-craque .ovr,.tier-craque .name,.tier-craque .st b{text-shadow:0 0 .6cqw rgba(0,0,0,.85),0 0 3cqw rgba(232,25,125,.7)!important}
 '''
 rep('</style>', extra + '</style>')
 # funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
