@@ -173,18 +173,19 @@ function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
   if(!t){box.innerHTML=`<h2>Equipes</h2><div class="empty">Nenhum torneio criado.</div>`;return}
   const st=statusT(t);
   if(st==="inscricao"&&gestor()){
-    if(!TR.ins||TR.ins.t!==t.id)TR.ins={t:t.id,set:new Set(t.inscritos?.length?t.inscritos:players.filter(p=>p.presente).map(p=>p.id))};
-    const sel=TR.ins.set;const ps=players.slice().sort((a,b)=>a.genero.localeCompare(b.genero)||ovr(b)-ovr(a));
-    const M=ps.filter(p=>p.genero==="M"&&sel.has(p.id)).length,F=ps.filter(p=>p.genero==="F"&&sel.has(p.id)).length;const n=Math.min(Math.floor(M/2),Math.floor(F/2));
+    if(!TR.ins||TR.ins.t!==t.id)TR.ins={t:t.id,set:new Set(t.inscritos||[])};
+    const sel=TR.ins.set;const ps=[...sel].map(byId).filter(Boolean).sort((a,b)=>ovr(b)-ovr(a));
+    const M=ps.filter(p=>p.genero==="M").length,F=ps.filter(p=>p.genero==="F").length;const n=Math.min(Math.floor(M/2),Math.floor(F/2));
     const sobra=(M-2*n)+(F-2*n);
-    const lista=g=>ps.filter(p=>p.genero===g).map(p=>`<label class="chk"><input type="checkbox" data-ins="${p.id}" ${sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${ovr(p)}</em></label>`).join("")||'<p class="note">Ninguém.</p>';
-    box.innerHTML=`<div class="lg-head"><h2>Inscrição</h2><button class="btn ghost" id="trTodos" type="button">Marcar todos</button></div>
-      <p class="note">Marque quem vai jogar. Cada equipe tem 2 homens e 2 mulheres.</p>
-      <div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
-      ${sobra>0&&n>0?`<p class="note">${sobra} atleta${sobra>1?"s":""} vai${sobra>1?"o":""} ficar de reserva (sorteado${sobra>1?"s":""}).</p>`:""}
-      <div class="grouplabel">Mulheres</div><div class="box tr-ins">${lista("F")}</div>
-      <div class="grouplabel">Homens</div><div class="box tr-ins">${lista("M")}</div>
-      <div class="tr-acao fixo"><button class="btn primary big" id="trSortEq" type="button" ${n<2?"disabled":""}>${n<2?"Precisa de pelo menos 4 homens e 4 mulheres":`Sortear ${n} equipes`}</button></div>`;
+    const linha=p=>`<div class="chk tr-insc"><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${ovr(p)}</em><button type="button" class="tr-tira" data-tira="${p.id}" aria-label="Tirar ${esc(p.nome)} do torneio">×</button></div>`;
+    const grupo=(g,nome)=>{const l=ps.filter(p=>p.genero===g);return l.length?`<div class="grouplabel">${nome} · ${l.length}</div><div class="box tr-ins">${l.map(linha).join("")}</div>`:""};
+    box.innerHTML=`<div class="lg-head"><h2>Inscrição</h2>${ps.length?`<button class="btn ghost" id="trLimpa" type="button">Limpar</button>`:""}</div>
+      <button class="btn ${ps.length?"":"primary "}big tr-importa" id="trImporta" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Importar atletas</button>
+      ${ps.length?`<div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
+      ${sobra>0&&n>0?`<p class="note">${sobra} atleta${sobra>1?"s":""} ${sobra>1?"vão":"vai"} ficar de reserva (sorteado${sobra>1?"s":""}). Para mais uma equipe faltam ${[2*(n+1)-M>0?`${2*(n+1)-M} ${2*(n+1)-M>1?"homens":"homem"}`:"",2*(n+1)-F>0?`${2*(n+1)-F} ${2*(n+1)-F>1?"mulheres":"mulher"}`:""].filter(Boolean).join(" e ")}.</p>`:""}
+      ${grupo("F","Mulheres")}${grupo("M","Homens")}
+      <div class="tr-acao fixo"><button class="btn primary big" id="trSortEq" type="button" ${n<2?"disabled":""}>${n<2?"Precisa de pelo menos 4 homens e 4 mulheres":`Sortear ${n} equipes`}</button></div>`
+      :`<div class="empty">Toque em <b>Importar atletas</b> e escolha quem vai participar. Cada equipe tem 2 homens e 2 mulheres.</div>`}`;
     return}
   const eqs=t.equipes||[];
   if(!eqs.length){box.innerHTML=`<h2>Equipes</h2><div class="empty">${gestor()?"":"As equipes ainda não foram sorteadas."}</div>`;return}
@@ -198,11 +199,36 @@ function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
       <div class="tr-cards">${e.ids.map(id=>{const p=byId(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${cardHTML(p,"mini")}</div>`:""}).join("")}</div></div>`).join("")}</div>
     ${(t.reservas||[]).length?`<div class="grouplabel">Reservas</div><div class="tr-cards res">${t.reservas.map(id=>{const p=byId(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${cardHTML(p,"mini")}</div>`:""}).join("")}</div>`:""}
     ${mexe?`<div class="tr-acao"><button class="btn ghost" id="trVoltaIns" type="button">Voltar à inscrição</button><button class="btn primary big" data-act2="grupos" type="button">Confirmar e sortear grupos</button></div>`:""}`}
-$("#trEq").addEventListener("change",e=>{const c=e.target.closest("[data-ins]");if(!c||!TR.ins)return;c.checked?TR.ins.set.add(c.dataset.ins):TR.ins.set.delete(c.dataset.ins);renderEquipes()});
+/* importar atletas do elenco da Liga para o torneio */
+const insSalva=t=>trSalva(t,{inscritos:[...TR.ins.set]});
+function abrirImporta(t){const imp={sel:new Set(),g:"todos",q:""};
+  const desenha=()=>{const fora=players.filter(p=>!TR.ins.set.has(p.id)).sort((a,b)=>a.nome.localeCompare(b.nome));
+    const vis=fora.filter(p=>(imp.g==="todos"||p.genero===imp.g)&&(!imp.q||p.nome.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").includes(imp.q)));
+    $("#impLista").innerHTML=vis.map(p=>`<label class="chk"><input type="checkbox" data-imp="${p.id}" ${imp.sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.genero==="F"?"♀":"♂"} ${p.pos} · ${ovr(p)}</em></label>`).join("")||`<p class="note">${fora.length?"Ninguém com esse filtro.":"Todo o elenco já está no torneio."}</p>`;
+    document.querySelectorAll("#impSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.g===imp.g));conta()};
+  const conta=()=>{const vis=[...document.querySelectorAll("#impLista [data-imp]")].map(c=>c.dataset.imp);const tudo=vis.length&&vis.every(id=>imp.sel.has(id));
+    $("#impTodos").textContent=tudo?"Desmarcar estes":"Marcar todos estes";$("#impTodos").disabled=!vis.length;
+    const nM=[...imp.sel].map(byId).filter(p=>p?.genero==="M").length,nF=imp.sel.size-nM;
+    $("#impOk").textContent=imp.sel.size?`Importar ${imp.sel.size} (${nM} H · ${nF} M)`:"Escolha os atletas";$("#impOk").disabled=!imp.sel.size};
+  abrirSheet(`<div class="row spread"><h3 style="margin:0">Importar atletas</h3><button class="btn ghost" type="button" data-x>Fechar</button></div>
+    <p class="note" style="margin:4px 0 8px">Elenco da Liga. Marque só quem vai participar do torneio.</p>
+    <input type="search" id="impBusca" placeholder="Buscar pelo nome" autocomplete="off">
+    <div class="seg lg-seg" id="impSeg"><button type="button" data-g="todos">Todos</button><button type="button" data-g="F">Mulheres</button><button type="button" data-g="M">Homens</button></div>
+    <button class="btn ghost" type="button" id="impTodos">Marcar todos estes</button>
+    <div class="box tr-ins tr-imp" id="impLista"></div>
+    <div class="tr-acao fixo2"><button class="btn primary big" type="button" id="impOk">Escolha os atletas</button></div>`,()=>{
+    $("#impBusca").oninput=e=>{imp.q=e.target.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");desenha()};
+    $("#impSeg").onclick=e=>{const b=e.target.closest("[data-g]");if(b){imp.g=b.dataset.g;desenha()}};
+    $("#impLista").onchange=e=>{const c=e.target.closest("[data-imp]");if(!c)return;c.checked?imp.sel.add(c.dataset.imp):imp.sel.delete(c.dataset.imp);conta()};
+    $("#impTodos").onclick=()=>{const vis=[...document.querySelectorAll("#impLista [data-imp]")].map(c=>c.dataset.imp);const tudo=vis.every(id=>imp.sel.has(id));vis.forEach(id=>tudo?imp.sel.delete(id):imp.sel.add(id));desenha()};
+    $("#impOk").onclick=()=>{const n=imp.sel.size;imp.sel.forEach(id=>TR.ins.set.add(id));fecharSheet();insSalva(t).then(()=>toast(`${n} atleta${n>1?"s":""} importado${n>1?"s":""}`))};
+    desenha()})}
 $("#trEq").addEventListener("click",e=>{const b=e.target.closest("[data-sigo]");if(!b)return;const t=trCur();if(!t)return;const k="tr_minha_"+t.id;
   trLS.set(k,trLS.get(k)===b.dataset.sigo?null:b.dataset.sigo);renderTr();toast(trLS.get(k)?"Sua equipe fica destacada nos jogos":"Equipe desmarcada")});
 $("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!gestor())return;
-  if(e.target.closest("#trTodos")){players.forEach(p=>TR.ins.set.add(p.id));return renderEquipes()}
+  if(e.target.closest("#trImporta"))return abrirImporta(t);
+  const tira=e.target.closest("[data-tira]");if(tira){TR.ins.set.delete(tira.dataset.tira);return insSalva(t)}
+  const lp=e.target.closest("#trLimpa");if(lp){if(lp.dataset.arm!=="1"){lp.dataset.arm="1";lp.textContent="Toque de novo para limpar";setTimeout(()=>renderEquipes(),3000);return}TR.ins.set.clear();return insSalva(t)}
   if(e.target.closest("#trSortEq")||e.target.closest("#trReEq")){const ids=e.target.closest("#trSortEq")?[...TR.ins.set]:t.inscritos;return sortearEquipes(t,ids)}
   if(e.target.closest("#trVoltaIns"))return trSalva(t,{status:"inscricao",equipes:[],reservas:[]});
   if(e.target.closest("[data-act2=grupos]"))return abrirGrupos(t);

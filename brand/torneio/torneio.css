@@ -138,3 +138,14 @@ body.publico #acctBtn,body.publico [data-logout]{display:none!important}
 @keyframes trSobe{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.tr-intro *{animation:none!important}}
 @keyframes trFlut{50%{transform:translateY(-8px) rotate(2deg)}}
+
+/* importar atletas */
+.tr-importa{display:flex;align-items:center;justify-content:center;gap:8px}
+.tr-importa svg{width:20px;height:20px}
+.tr-insc{cursor:default}
+.tr-tira{margin-left:8px;flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);font-size:18px;line-height:1}
+#impSeg{grid-template-columns:repeat(3,1fr)!important;margin:8px 0}
+.tr-imp{max-height:52vh;overflow:auto;margin-top:8px}
+.tr-imp .chk em{margin-left:auto;color:var(--muted);font-style:normal;font-size:12px}
+.tr-acao.fixo2{position:sticky;bottom:0;padding-top:8px;background:var(--panel)}
+#impBusca{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--fg);font:inherit;width:100%;box-sizing:border-box}
