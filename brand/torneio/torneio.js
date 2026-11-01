@@ -191,8 +191,10 @@ function sortearEquipes(t,ids){
   const T=Array.from({length:n},()=>[]);
   const cobra=(arr,inv)=>arr.sort((x,y)=>rz.get(y.id)-rz.get(x.id)).forEach((p,i)=>{const r=Math.floor(i/n),k=i%n;let idx=r%2===0?k:n-1-k;if(inv)idx=n-1-idx;T[idx].push(p)});
   cobra(M,false);cobra(F,true);
-  const nLev=ps.filter(levanta).length;
-  const custo=()=>{const s=T.map(e=>e.reduce((a,p)=>a+ovr(p),0));let c=Math.max(...s)-Math.min(...s);if(nLev>=n)c+=12*T.filter(e=>!e.some(levanta)).length;return c};
+  const nLev=ps.filter(levanta).length;const craque=p=>ovr(p)>=90;
+  // craques (over 90+) espalhados: no máximo um a mais numa equipe do que em outra
+  const custo=()=>{const s=T.map(e=>e.reduce((a,p)=>a+ovr(p),0));let c=Math.max(...s)-Math.min(...s);if(nLev>=n)c+=12*T.filter(e=>!e.some(levanta)).length;
+    const k=T.map(e=>e.filter(craque).length);c+=25*Math.max(0,Math.max(...k)-Math.min(...k)-1)+25*(Math.max(...k)-Math.min(...k));return c};
   for(let it=0;it<300;it++){let best=null,bv=custo();
     for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)for(let a=0;a<4;a++)for(let b=0;b<4;b++){const pa=T[i][a],pb=T[j][b];if(!pa||!pb||pa.genero!==pb.genero)continue;
       T[i][a]=pb;T[j][b]=pa;const v=custo();T[i][a]=pa;T[j][b]=pb;if(v<bv-.01){bv=v;best=[i,j,a,b]}}
