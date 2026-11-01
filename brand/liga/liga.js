@@ -334,3 +334,14 @@ EXTRA.start.push(()=>{
   // atualiza o selo "Agora" e o "há x min" a cada minuto
   const tk=setInterval(()=>{if(!document.hidden){renderAgenda();renderAvisos()}},60000);unsubs.push(()=>clearInterval(tk));
 });
+
+/* ---- elenco aberto para o app Torneio Liga (abre sem conta): só as cartas, com foto pequena ---- */
+const ELC={sig:"",t:null,fotos:new Map()};
+function elFoto(id,src){return new Promise(res=>{if(!src)return res("");const k=id+":"+src.length+":"+src.slice(-24);if(ELC.fotos.has(k))return res(ELC.fotos.get(k));
+  const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=120;c.width=c.height=s;c.getContext("2d").drawImage(img,0,0,s,s);const u=c.toDataURL("image/jpeg",.7);ELC.fotos.set(k,u);res(u)};img.onerror=()=>res("");img.src=src})}
+function publicaElenco(){if(!gestor()||!teamId||!players.length)return;
+  const sig=players.map(p=>[p.id,p.nome,p.genero,p.pos,p.pos2||"",p.numero||"",(p.attrs||[]).join("."),(p.foto||"").length,p.avaliado!==false].join("|")).sort().join(";");
+  if(sig===ELC.sig)return;ELC.sig=sig;clearTimeout(ELC.t);
+  ELC.t=setTimeout(async()=>{const el={};for(const p of players)el[p.id]={nome:p.nome,genero:p.genero,pos:p.pos,pos2:p.pos2||"",numero:p.numero||"",attrs:p.attrs,avaliado:p.avaliado!==false,tipo:p.tipo||"avulso",foto:await elFoto(p.id,p.foto)};
+    try{await setDoc(doc(db,"publico","liga"),{time:teamId,nome:team?.nome||"Liga da Justiça",elenco:el,em:serverTimestamp()})}catch(e){ELC.sig="";console.warn("elenco",e)}},2500)}
+EXTRA.render.push(publicaElenco);

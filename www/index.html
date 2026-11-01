@@ -807,7 +807,7 @@ document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=()=>{bioAuto=tru
 
 onAuthStateChanged(auth,async u=>{
   stopAll();EXTRA.reset.forEach(f=>f());user=u;teamId=null;me=null;team=null;players=[];members=[];lastDrawSec=null;playersLoaded=false;membersLoaded=false;
-  if(!u){if(EXTRA.semLogin)return EXTRA.semLogin();show("auth");bioOferecerLogin();return}
+  if(!u||EXTRA.semConta){if(EXTRA.semLogin)return EXTRA.semLogin();show("auth");bioOferecerLogin();return}
   if(precisaDesbloquear(u)){show("loading");const ok=await pedirDesbloqueio();if(!ok||user!==u)return}
   show("loading");
   try{

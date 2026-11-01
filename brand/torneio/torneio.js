@@ -1,5 +1,5 @@
 /* ================= TORNEIO LIGA: vôlei de areia 4x4 (2 homens + 2 mulheres) ================= */
-const TR={publico:false,pubOk:false,gerCartas:false,lista:[],sel:null,sub:null,ok:false,aba:"grupos",filtro:"todos",swap:null,jogo:null,manual:false,animEq:0,animGr:0,antes:null,ins:null};
+const TR={elenco:[],publico:false,pubOk:false,gerCartas:false,lista:[],sel:null,sub:null,ok:false,aba:"grupos",filtro:"todos",swap:null,jogo:null,manual:false,animEq:0,animGr:0,antes:null,ins:null};
 const TCORES=["#e8197d","#2fbfa8","#f5c542","#3f8cff","#ff7a45","#9b6bff","#3ccf8e","#ff5a7a","#4fd6e0","#c3e64f","#ff9fd6","#b0b7c3","#e0a96d","#6be0b0","#7f8cff","#ff6b5a"];
 const FASE={G:"Grupo",O:"Oitavas",Q:"Quartas",S:"Semifinal",F:"Final","3":"3º lugar"};
 Object.assign(ICON,{
@@ -59,32 +59,27 @@ function syncTr(){
         if((A===eu.id||B===eu.id)&&r0==="ag"&&r1==="vivo")notify(`Seu jogo começou: ${nomeEq(t,A)} x ${nomeEq(t,B)}`,"jogos")});
       const ca=statusT(antes),cb=statusT(t);if(ca!=="fim"&&cb==="fim")notify(`Temos campeão: ${nomeEq(t,vencedor(t,t.jogos.find(j=>j.fase==="F")))}!`,"torneio");
     }
-    if(TR.publico&&t)players=Object.entries(t.cartas||{}).map(([id,c])=>({id,...c}));
+    if(TR.publico)juntaElenco();
     if(!TR.publico&&gestor()&&t&&(t.inscritos||[]).length&&!t.cartas&&!TR.gerCartas){TR.gerCartas=true;fotoCartas(t.inscritos).then(c=>updateDoc(trRef(t.id),{cartas:c})).catch(()=>{})}
     TR.ok=true;renderTr()},e=>console.warn("torneios",e));
   unsubs.push(()=>{TR.sub&&TR.sub();TR.sub=null})}
 EXTRA.render.push(()=>{syncTr();renderTr()});
-EXTRA.reset.push(()=>{TR.sub=null;TR.ok=false;TR.lista=[];TR.sel=null;TR.publico=false;TR.gerCartas=false;document.body.classList.remove("publico")});
-/* ---------- sem login: quem abre o app só acompanha; a organização entra pela Área do organizador ---------- */
-EXTRA.semBio=true;
-EXTRA.semLogin=async()=>{show("loading");
-  try{const p=await getDoc(doc(db,"publico","liga"));
-    if(!p.exists()){$("#trSemPub").hidden=false;show("auth");return}
-    teamId=p.data().time;team={nome:p.data().nome||"Liga da Justiça"};me={papel:"",nome:"",carta:null};
-    TR.publico=true;document.body.classList.add("publico");$("#trSemPub").hidden=true;
-    buildTabs();show("app");go("torneio");syncTr();renderTr()}
-  catch(e){console.warn(e);$("#trSemPub").hidden=false;show("auth")}};
-EXTRA.semTime=u=>{toast("Esta conta não faz parte da Liga");signOut(auth)};
-$("#acctBtn").onclick=()=>{if(!user)return;$("#acctSheet").innerHTML=`<div class="row spread"><h2>Organização</h2><button class="btn ghost" type="button" id="acctX">Fechar</button></div>
-  <p class="note" style="margin:0">${esc(user.email||"")}</p><button class="btn ghost" type="button" id="acctSair">Sair da área do organizador</button>`;
-  $("#acctModal").hidden=false;$("#acctX").onclick=()=>$("#acctModal").hidden=true;$("#acctSair").onclick=()=>{$("#acctModal").hidden=true;signOut(auth)}};
-(()=>{const a=$("#s-auth");if(!a)return;a.insertAdjacentHTML("afterbegin",`<button class="btn ghost tr-voltar" type="button" id="trVoltar">‹ Voltar ao torneio</button>`);
-  a.insertAdjacentHTML("beforeend",`<p class="note" id="trSemPub" hidden>O torneio ainda não foi aberto ao público. A organização precisa entrar uma vez para liberar.</p>`);
-  $("#trVoltar").onclick=()=>{if(user)signOut(auth);else EXTRA.semLogin()}})();
-/* a organização publica o time do torneio para quem abre o app sem login */
-function publicaPonteiro(){if(TR.publico||TR.pubOk||!gestor()||!teamId)return;TR.pubOk=true;
-  setDoc(doc(db,"publico","liga"),{time:teamId,nome:team?.nome||"Liga da Justiça"},{merge:true}).catch(e=>{TR.pubOk=false;console.warn("publico",e)})}
-EXTRA.render.push(publicaPonteiro);
+EXTRA.reset.push(()=>{trPubSub&&trPubSub();trPubSub=null;TR.sub=null;TR.ok=false;TR.lista=[];TR.sel=null;TR.publico=false;TR.gerCartas=false;document.body.classList.remove("publico")});
+/* ---------- sem conta: o app abre direto para montar e acompanhar o torneio ---------- */
+EXTRA.semBio=true;EXTRA.semConta=true;
+let trPubSub=null;
+EXTRA.semLogin=()=>{show("loading");$("#trSemPub").hidden=true;trPubSub&&trPubSub();let primeira=true;
+  trPubSub=onSnapshot(doc(db,"publico","liga"),p=>{
+    if(!p.exists()){$("#trSemPub").hidden=false;return}
+    const d=p.data();teamId=d.time;team={nome:d.nome||"Liga da Justiça"};
+    TR.elenco=Object.entries(d.elenco||{}).map(([id,c])=>({id,...c}));juntaElenco();
+    if(primeira){primeira=false;me={papel:"presidente",nome:"",carta:null};TR.publico=true;document.body.classList.add("publico");
+      buildTabs();show("app");go("torneio");syncTr()}
+    renderTr()},e=>{console.warn("publico",e);$("#trSemPub").hidden=false})};
+/* elenco publicado pelo app da Liga + cartas guardadas no torneio */
+function juntaElenco(){const t=trCur();const m=new Map((TR.elenco||[]).map(p=>[p.id,p]));
+  Object.entries(t?.cartas||{}).forEach(([id,c])=>{if(!m.has(id))m.set(id,{id,...c})});players=[...m.values()]}
+(()=>{const l=$("#s-loading");if(l)l.insertAdjacentHTML("beforeend",`<p class="note" id="trSemPub" hidden style="max-width:320px;text-align:center">O elenco da Liga ainda não chegou aqui. Peça para o presidente abrir o app da Liga uma vez (versão nova) que as cartas aparecem.</p>`)})();
 /* cartas do torneio guardadas junto (com foto pequena) para quem acompanha sem login */
 function miniFoto(src){return new Promise(res=>{if(!src)return res("");const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=120;c.width=c.height=s;
   c.getContext("2d").drawImage(img,0,0,s,s);res(c.toDataURL("image/jpeg",.7))};img.onerror=()=>res("");img.src=src})}
@@ -120,7 +115,7 @@ function jogoLinha(t,j,opt={}){const r=res(t,j),A=lado(t,j,"a"),B=lado(t,j,"b"),
 function renderHome(){const box=$("#trHome");if(!box)return;const t=trCur();
   if(!TR.ok){box.innerHTML=`<div class="empty">Carregando…</div>`;return}
   if(!t){box.innerHTML=`<div class="tr-hero"><span class="tr-kicker">Vôlei de areia 4x4</span><h2>Torneio da Liga</h2><p>Equipes de 2 homens e 2 mulheres, sorteadas com equilíbrio pelas cartas.</p></div>
-    ${gestor()?formCriar():`<div class="empty">A organização ainda não criou um torneio.</div>`}`;ligaCriar();return}
+    ${gestor()?formCriar():`<div class="empty">Nenhum torneio ainda.</div>`}`;ligaCriar();return}
   const st=statusT(t),idx=PASSOS.findIndex(p=>p[0]===st);const js=(t.jogos||[]).filter(j=>!j.bye);
   const feitos=js.filter(j=>res(t,j).st==="fim").length;const vivos=js.filter(j=>res(t,j).st==="vivo");
   const prox=js.filter(j=>res(t,j).st==="ag"&&lado(t,j,"a")&&lado(t,j,"b")).sort((a,b)=>a.slot-b.slot||a.quadra-b.quadra).slice(0,4);
@@ -164,7 +159,7 @@ function ligaCriar(){const f=$("#trNovo");if(!f)return;f.onsubmit=async e=>{e.pr
   const nome=$("#tnNome").value.trim()||"Torneio";const b=f.querySelector("[type=submit]");b.disabled=true;
   try{const r=doc(collection(db,"times",teamId,"torneios"));
     await setDoc(r,{nome,data:$("#tnData").value,quadras:+$("#tnQ").value,pts:+$("#tnPts").value,ptsKO:+$("#tnPtsKO").value,setsKO:$("#tnMD3").checked?3:1,tie15:$("#tnTie").checked,terceiro:$("#tnTer").checked,
-      status:"inscricao",inscritos:[],equipes:[],reservas:[],grupos:[],jogos:[],res:{},criadoEm:serverTimestamp(),criadoPor:user.uid});
+      status:"inscricao",inscritos:[],equipes:[],reservas:[],grupos:[],jogos:[],res:{},criadoEm:serverTimestamp(),criadoPor:user?.uid||"app"});
     TR.sel=r.id;toast("Torneio criado");go("equipes")}catch(err){$("#tnErr").textContent="Não consegui criar: "+(err.code||err.message);b.disabled=false}}}
 $("#trHome").addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g)return go(g.dataset.go);
   const a=e.target.closest("[data-act]");if(a&&gestor()){const t=trCur();
@@ -403,16 +398,12 @@ $("#trShareJ").onclick=()=>{const t=trCur();if(!t)return;let s=`🏐 ${t.nome} �
 
 /* ---------- mais ---------- */
 function renderTMais(){const box=$("#trMais");if(!box||!me)return;const t=[];
-  if(TR.publico)t.push(["__org","Organização","Entrar para montar o torneio"]);
-  else{if(jogaEu())t.push(["carta","Minha carta","Sua carta de atleta"]);
-    if(gestor())t.push(["elenco","Elenco","Cartas e atributos"]);
-    t.push(["placar","Placar livre","Placar avulso"])}
+
   box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile" data-v="${v}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("");
   const o=$("#trOutros");if(!o)return;const cur=trCur();
   o.innerHTML=`<div class="grouplabel">Torneios</div><div class="lg-list">${TR.lista.map(x=>`<button type="button" class="tr-outro${cur&&cur.id===x.id?" on":""}" data-t="${x.id}"><b>${esc(x.nome)}</b><span>${dataBR(x.data)} · ${({inscricao:"Inscrição",equipes:"Equipes",grupos:"Grupos",jogos:"Fase de grupos",mata:"Mata-mata",fim:"Encerrado"})[statusT(x)]}</span></button>`).join("")||'<div class="empty">Nenhum torneio ainda.</div>'}</div>
     ${gestor()?`<div class="tr-acao"><button class="btn" type="button" id="trNovoBtn">Novo torneio</button>${cur?`<button class="btn danger" type="button" id="trApaga">Apagar torneio selecionado</button>`:""}</div>`:""}`}
-ICON.__org='<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
-$("#trMais").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;if(b.dataset.v==="__org"){$("#trSemPub").hidden=true;return show("auth")}go(b.dataset.v)});
+
 let trApagaArm=false;
 $("#trOutros").addEventListener("click",async e=>{const b=e.target.closest("[data-t]");if(b){TR.sel=b.dataset.t;renderTr();return go("torneio")}
   if(e.target.closest("#trNovoBtn")){TR.sel="__novo";renderTr();return go("torneio")}

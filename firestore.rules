@@ -121,10 +121,11 @@ service cloud.firestore {
         allow delete: if fin(t);
       }
 
-      // Torneio: todos do time acompanham; só a comissão monta e marca os placares
+      // Torneio Liga: aberto para ler; quem tem o app monta e marca os placares
       match /torneios/{x} {
         allow read: if true;
-        allow write: if gestor(t);
+        // o app Torneio Liga abre sem conta: qualquer um com o app monta e marca placares do torneio da Liga
+        allow write: if gestor(t) || get(/databases/$(database)/documents/publico/liga).data.time == t;
       }
 
       match /jogadores/{j} {
