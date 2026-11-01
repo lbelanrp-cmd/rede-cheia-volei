@@ -18,6 +18,12 @@ service cloud.firestore {
       allow read, write: if logado() && request.auth.uid == uid;
     }
 
+    // Torneio Liga: aponta qual time aparece para quem abre o app sem login
+    match /publico/{d} {
+      allow read: if true;
+      allow write: if logado() && gestor(request.resource.data.time);
+    }
+
     match /convites/{codigo} {
       allow get: if logado();
       allow list: if false;
@@ -117,7 +123,7 @@ service cloud.firestore {
 
       // Torneio: todos do time acompanham; só a comissão monta e marca os placares
       match /torneios/{x} {
-        allow read: if membro(t);
+        allow read: if true;
         allow write: if gestor(t);
       }
 

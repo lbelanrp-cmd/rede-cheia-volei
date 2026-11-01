@@ -31,7 +31,7 @@ rep('rgba(13,20,32,.97)', 'rgba(8,8,11,.97)', 0)
 if TORNEIO:
     s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="brand">Torneio <span>Liga</span></div>')
     rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Torneio <span>Liga</span></div>')
-    rep('O vôlei do seu time, organizado', 'Torneio de areia 4x4 da Liga · entre com a mesma conta do app da Liga')
+    rep('O vôlei do seu time, organizado', 'Área do organizador · entre com a sua conta do app da Liga')
     rep('pelo app Rede Cheia Vôlei', 'pelo app Torneio Liga')
     rep('releases/download/rede-atual/RedeCheiaVolei.apk', 'releases/download/torneio-atual/TorneioLiga.apk')
 else:
@@ -65,6 +65,8 @@ if TORNEIO:
     rt = lambda n: open(os.path.join(tdir, n), encoding="utf-8").read()
     rep('.forEach(m=>notify(`${m.nome} entrou no time como ${nomePapel(m)}.`,"time"));', '.forEach(m=>notify(`${m.nome} entrou no app do torneio.`,"torneio"));')
     rep('<!--@@EXTRA_VIEWS@@-->', rt("torneio.html"))
+    rep('<div class="screen auth" id="s-loading">', rt("intro.html") + '<div class="screen auth" id="s-loading">')
+    shutil.copy(os.path.join(tdir, "zebra.jpg"), os.path.join(ROOT, "www", "zebra.jpg"))
     rep('/*@@EXTRA_JS@@*/', rt("torneio.js"))
     rep('</style>', rd("liga.css") + rt("torneio.css") + '</style>')
 else:

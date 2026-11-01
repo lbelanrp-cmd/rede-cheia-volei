@@ -698,7 +698,7 @@ const bioEmail=()=>lsx.get("rc_bio_email");
 async function bioDisponivel(){if(!temNativo())return false;if(bioDisp!==null)return bioDisp;
   try{const r=await NB("isAvailable",{useFallback:false});bioDisp=!!r?.isAvailable}catch(e){bioDisp=false}return bioDisp}
 const bioVerificar=txt=>NB("verifyIdentity",{reason:txt,title:document.title,subtitle:txt,negativeButtonText:"Cancelar",maxAttempts:5});
-const precisaDesbloquear=u=>temNativo()&&!bioDesbloqueado&&lsx.get("rc_bio_lock")==="1"&&bioEmail()===u.email;
+const precisaDesbloquear=u=>!EXTRA.semBio&&temNativo()&&!bioDesbloqueado&&lsx.get("rc_bio_lock")==="1"&&bioEmail()===u.email;
 function pedirDesbloqueio(){return new Promise(res=>{
   const lock=$("#bioLock"),msg=$("#bioLockMsg");lock.hidden=false;let fim=false;
   const acabar=v=>{if(fim)return;fim=true;lock.hidden=true;$("#bioUnlock").onclick=null;$("#bioOutra").onclick=null;res(v)};
@@ -712,7 +712,7 @@ document.addEventListener("visibilitychange",()=>{
   if(user&&saiuEm&&Date.now()-saiuEm>5*60*1000&&$("#bioLock").hidden&&lsx.get("rc_bio_lock")==="1"&&bioEmail()===user.email&&temNativo()){bioDesbloqueado=false;pedirDesbloqueio()}
   saiuEm=0});
 async function bioOferecerLogin(){
-  const b=$("#aBio");b.hidden=true;const em=bioEmail();if(!em||!(await bioDisponivel()))return;
+  const b=$("#aBio");b.hidden=true;if(EXTRA.semBio)return;const em=bioEmail();if(!em||!(await bioDisponivel()))return;
   b.hidden=false;if(!$("#aEmail").value)$("#aEmail").value=em;
   if(!bioAuto){bioAuto=true;bioEntrar()}}
 async function bioEntrar(){
@@ -724,7 +724,7 @@ async function bioEntrar(){
     if(err.code==="auth/invalid-credential")bioDesativar(true)}}
 $("#aBio").onclick=bioEntrar;
 async function bioOferecerAtivar(){
-  const p=bioPend;bioPend=null;if(!p||!user||p.em!==user.email||!(await bioDisponivel()))return;
+  const p=bioPend;bioPend=null;if(EXTRA.semBio||!p||!user||p.em!==user.email||!(await bioDisponivel()))return;
   if(bioEmail()===p.em){try{await NB("setCredentials",{username:p.em,password:p.pw,server:BIO_SERVER})}catch(e){}return}
   if(lsx.get("rc_bio_nao_"+p.em))return;
   $("#acctSheet").innerHTML=`<div class="bio-hero">${IC_FP}</div><h2 style="text-align:center">Entrar com biometria?</h2>
@@ -807,7 +807,7 @@ document.querySelectorAll("[data-logout]").forEach(b=>b.onclick=()=>{bioAuto=tru
 
 onAuthStateChanged(auth,async u=>{
   stopAll();EXTRA.reset.forEach(f=>f());user=u;teamId=null;me=null;team=null;players=[];members=[];lastDrawSec=null;playersLoaded=false;membersLoaded=false;
-  if(!u){show("auth");bioOferecerLogin();return}
+  if(!u){if(EXTRA.semLogin)return EXTRA.semLogin();show("auth");bioOferecerLogin();return}
   if(precisaDesbloquear(u)){show("loading");const ok=await pedirDesbloqueio();if(!ok||user!==u)return}
   show("loading");
   try{
@@ -817,6 +817,7 @@ onAuthStateChanged(auth,async u=>{
       if(ms.exists()){teamId=us.data().time;return startApp()}
     }
   }catch(e){console.warn(e)}
+  if(EXTRA.semTime)return EXTRA.semTime(u);
   $("#obWho").textContent=u.email||"";$("#obName").value=u.displayName||"";show("onboard");
 });
 
