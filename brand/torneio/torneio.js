@@ -91,8 +91,11 @@ function miniFoto(src){return new Promise(res=>{if(!src)return res("");const img
 async function fotoCartas(ids){const o={};for(const id of ids){const p=byId(id);if(!p)continue;
   o[id]={nome:p.nome,genero:p.genero,pos:p.pos,pos2:p.pos2||"",numero:p.numero||"",attrs:p.attrs,avaliado:p.avaliado!==false,tipo:p.tipo||"avulso",foto:await miniFoto(p.foto)}}return o}
 /* abertura com a zebra */
+const TR_INTRO=$("#trIntro")?.outerHTML||"";
 (()=>{const i=$("#trIntro");if(!i)return;const sai=()=>{if(i.classList.contains("sai"))return;i.classList.add("sai");setTimeout(()=>i.remove(),600)};
-  i.addEventListener("click",sai);setTimeout(sai,matchMedia("(prefers-reduced-motion: reduce)").matches?800:2600)})();
+  i.addEventListener("click",()=>{if(Date.now()-t0>1200)sai()});const t0=Date.now();setTimeout(sai,matchMedia("(prefers-reduced-motion: reduce)").matches?1500:5200)})();
+window.__intro=()=>{const old=$("#trIntro");if(old)old.remove();document.body.insertAdjacentHTML("afterbegin",TR_INTRO);const i=$("#trIntro");const t0=Date.now();
+  const sai=()=>{if(i.classList.contains("sai"))return;i.classList.add("sai");setTimeout(()=>i.remove(),900)};i.addEventListener("click",()=>{if(Date.now()-t0>1200)sai()});setTimeout(sai,5200)};
 EXTRA.onMark=()=>renderTr();
 async function trSalva(t,patch,msg){Object.assign(t,patch);renderTr();
   try{await updateDoc(trRef(t.id),patch);if(msg)toast(msg)}catch(e){toast("Não consegui salvar: "+(e.code||e.message))}}
