@@ -115,6 +115,12 @@ service cloud.firestore {
         allow delete: if fin(t);
       }
 
+      // Torneio: todos do time acompanham; só a comissão monta e marca os placares
+      match /torneios/{x} {
+        allow read: if membro(t);
+        allow write: if gestor(t);
+      }
+
       match /jogadores/{j} {
         allow read: if membro(t);
         allow create: if gestor(t)

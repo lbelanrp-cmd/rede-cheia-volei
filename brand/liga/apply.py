@@ -1,6 +1,8 @@
 """Transforma o app padrão na versão Liga da Justiça (cores, nome, ícone)."""
 import json, re, shutil, os
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# MARCA=torneio: mesmo visual da Liga, mas só com as telas do torneio
+TORNEIO = os.environ.get("MARCA") == "torneio"
 p = os.path.join(ROOT, "www", "index.html")
 s = open(p, encoding="utf-8").read()
 
@@ -19,18 +21,25 @@ rep('const GESTORES=["presidente","capitao","capita","professor"];', 'const GEST
 rep('const nomePapel=m=>!m?"":m.papel==="presidente"||m.papel==="professor"?(m.titulo==="capita"?"Capitã":"Capitão"):PAPEL[m.papel]||m.papel;', 'const nomePapel=m=>!m?"":(PAPEL[m.papel]||m.papel)+(m.papel!=="atleta"&&m.joga?" · Atleta":"");')
 rep('Quem cria o time é o capitão principal: convida os outros capitães e pode excluir o time.', 'Quem cria o time vira o presidente.')
 rep('<select id="obTitulo" aria-label="Você é"><option value="capitao">Sou capitão</option><option value="capita">Sou capitã</option></select>', '')
-rep('<title>Rede Cheia Vôlei</title>', '<title>Liga da Justiça Vôlei</title>')
+rep('<title>Rede Cheia Vôlei</title>', '<title>Torneio Liga</title>' if TORNEIO else '<title>Liga da Justiça Vôlei</title>')
 rep('--bg:#0d1420; --panel:#151f30; --panel-2:#1c2940; --line:#2a3a56;',
     '--bg:#08080b; --panel:#15131a; --panel-2:#1f1b25; --line:#3a3343;')
 rep('--fg:#eef2f8; --muted:#8fa0bb; --accent:#ffb21f; --accent-2:#3f8cff;',
     '--fg:#ffffff; --muted:#b9b1c2; --accent:#e8197d; --accent-2:#2fbfa8; --accent-3:#e8197d;')
 rep('color:#1a1200', 'color:#ffffff', 0)
 rep('rgba(13,20,32,.97)', 'rgba(8,8,11,.97)', 0)
-s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="brand">Liga <span>da Justiça</span></div>')
-rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Liga <span>da Justiça</span></div>')
-rep('O vôlei do seu time, organizado', 'O vôlei da Liga, organizado')
-rep('pelo app Rede Cheia Vôlei', 'pelo app Liga da Justiça Vôlei')
-rep('releases/download/rede-atual/RedeCheiaVolei.apk', 'releases/download/liga-atual/LigaDaJusticaVolei.apk')
+if TORNEIO:
+    s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="brand">Torneio <span>Liga</span></div>')
+    rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Torneio <span>Liga</span></div>')
+    rep('O vôlei do seu time, organizado', 'Torneio de areia 4x4 da Liga · entre com a mesma conta do app da Liga')
+    rep('pelo app Rede Cheia Vôlei', 'pelo app Torneio Liga')
+    rep('releases/download/rede-atual/RedeCheiaVolei.apk', 'releases/download/torneio-atual/TorneioLiga.apk')
+else:
+    s = s.replace('<div class="brand">Rede <span>Cheia</span></div>', '<div class="brand">Liga <span>da Justiça</span></div>')
+    rep('<div class="brand" id="teamName">Rede <span>Cheia</span></div>', '<div class="brand" id="teamName">Liga <span>da Justiça</span></div>')
+    rep('O vôlei do seu time, organizado', 'O vôlei da Liga, organizado')
+    rep('pelo app Rede Cheia Vôlei', 'pelo app Liga da Justiça Vôlei')
+    rep('releases/download/rede-atual/RedeCheiaVolei.apk', 'releases/download/liga-atual/LigaDaJusticaVolei.apk')
 rep('placeholder="Nome do time"', 'placeholder="Nome do time" value="Liga da Justiça"')
 # identidade visual extra: fundo com brilho e título em degradê
 extra = '''
@@ -49,33 +58,43 @@ body{background:radial-gradient(90% 45% at 0% 0%,rgba(232,25,125,.22),transparen
 .tier-craque .crest{background:#fff;color:#e8197d}
 '''
 rep('</style>', extra + '</style>')
-# funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
 here = os.path.dirname(os.path.abspath(__file__))
 rd = lambda n: open(os.path.join(here, n), encoding="utf-8").read()
-rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html") + rd("pix.html"))
-rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js") + rd("pix.js"))
-rep('</style>', rd("liga.css") + rd("fin.css") + rd("pix.css") + '</style>')
-# gerador de QR Code (MIT, Kazuhiko Arase) para o Pix
-shutil.copy(os.path.join(here, "qrcode.js"), os.path.join(ROOT, "www", "qrcode.js"))
-rep('<script type="module">', '<script src="qrcode.js"></script>\n<script type="module">')
-fs_imp = 'from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";'
-rep(fs_imp, fs_imp + '\nimport {query,where,orderBy,limit} ' + fs_imp)
+if TORNEIO:
+    tdir = os.path.join(ROOT, "brand", "torneio")
+    rt = lambda n: open(os.path.join(tdir, n), encoding="utf-8").read()
+    rep('<!--@@EXTRA_VIEWS@@-->', rt("torneio.html"))
+    rep('/*@@EXTRA_JS@@*/', rt("torneio.js"))
+    rep('</style>', rd("liga.css") + rt("torneio.css") + '</style>')
+else:
+    # funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
+    rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html") + rd("pix.html"))
+    rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js") + rd("pix.js"))
+    rep('</style>', rd("liga.css") + rd("fin.css") + rd("pix.css") + '</style>')
+    # gerador de QR Code (MIT, Kazuhiko Arase) para o Pix
+    shutil.copy(os.path.join(here, "qrcode.js"), os.path.join(ROOT, "www", "qrcode.js"))
+    rep('<script type="module">', '<script src="qrcode.js"></script>\n<script type="module">')
+    fs_imp = 'from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";'
+    rep(fs_imp, fs_imp + '\nimport {query,where,orderBy,limit} ' + fs_imp)
 open(p, "w", encoding="utf-8").write(s)
 
 c = os.path.join(ROOT, "capacitor.config.json")
 cfg = json.load(open(c, encoding="utf-8"))
-cfg["appId"] = "br.redecheia.ligadajustica"
-cfg["appName"] = "Liga da Justiça Vôlei"
-cfg["plugins"] = {"LocalNotifications": {"smallIcon": "ic_stat_bola", "iconColor": "#E8197D"}}
+cfg["appId"] = "br.redecheia.ligadajustica.torneio" if TORNEIO else "br.redecheia.ligadajustica"
+cfg["appName"] = "Torneio Liga" if TORNEIO else "Liga da Justiça Vôlei"
+if not TORNEIO:
+    cfg["plugins"] = {"LocalNotifications": {"smallIcon": "ic_stat_bola", "iconColor": "#E8197D"}}
 json.dump(cfg, open(c, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-src = os.path.join(ROOT, "brand", "liga", "res")
+src = os.path.join(ROOT, "brand", "torneio" if TORNEIO else "liga", "res")
 dst = os.path.join(ROOT, "resources", "android", "res")
 shutil.rmtree(dst, ignore_errors=True)  # ícones e splash da Liga substituem os do Rede Cheia
 shutil.copytree(src, dst)
-print("Versão Liga da Justiça aplicada")
+print("Versão Torneio Liga aplicada" if TORNEIO else "Versão Liga da Justiça aplicada")
 
 # lembretes no celular: plugin só no app da Liga
+if TORNEIO:
+    raise SystemExit(0)
 pk = os.path.join(ROOT, "package.json")
 d = json.load(open(pk, encoding="utf-8"))
 d["dependencies"]["@capacitor/local-notifications"] = ">=6.0.0 <7.0.0"
