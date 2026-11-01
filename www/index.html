@@ -655,7 +655,7 @@ const sigla=n=>String(n||"").trim().split(/\s+/).filter(w=>w.length>2||/^[A-Z0-9
 function cardHTML(p,extra=""){const o=ovr(p),t=tier(o),gen=p.genero==="F"?"♀":"♂";
   return `<button type="button" class="card tier-${t} ${extra}" data-id="${p.id}" ${p.avaliado===false?'data-pend="1"':""} aria-label="${esc(p.nome)}, nota ${o}">
    <div class="aura"></div><div class="frame"></div><div class="face">
-   <div class="tex"></div><div class="streaks"></div><div class="foil"></div><div class="lux"></div>${p.numero?`<div class="bignum">${esc(p.numero)}</div>`:""}
+   <div class="tex"></div><div class="streaks"></div><div class="foil"></div><div class="lux"></div><div class="bignum">${esc(p.numero||o)}</div>
    <div class="photo${p.foto?"":" vazia"}">${p.foto?`<img src="${p.foto}" alt="">`:'<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="34" r="17"/><path d="M14 100c2-24 17-38 36-38s34 14 36 38z"/></svg>'}</div>
    <div class="band"></div>
    <div class="shine"></div><div class="shine s2"></div><i class="flare"></i>${[1,2,3,4,5,6,7,8].map(n=>`<i class="spark s${n}"></i>`).join("")}${[1,2,3,4,5,6].map(n=>`<i class="pt p${n}"></i>`).join("")}
