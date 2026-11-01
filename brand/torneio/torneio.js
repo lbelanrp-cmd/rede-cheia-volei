@@ -70,7 +70,7 @@ function renderTr(){if(!me||!team)return;renderHome();renderEquipes();renderJogo
 
 /* ---------- início ---------- */
 const PASSOS=[["inscricao","Inscrição"],["equipes","Equipes"],["grupos","Grupos"],["jogos","Jogos"],["mata","Mata-mata"],["fim","Campeão"]];
-function formatoTxt(t){return `Grupos: 1 set de ${t.pts||21} · ${t.setsKO>1?`Semifinal e final: melhor de 3 sets de ${t.ptsKO||21}${t.tie15?" (3º set de 15)":""}`:`Mata-mata: 1 set de ${t.ptsKO||21}`}${t.terceiro?" · Disputa de 3º lugar":""}`}
+function formatoTxt(t){return `Grupos: 1 set de ${t.pts||21}, vitória vale ${t.ptsVit??3} pontos · ${t.setsKO>1?`Semifinal e final: melhor de 3 sets de ${t.ptsKO||21}${t.tie15?" (3º set de 15)":""}`:`Mata-mata: 1 set de ${t.ptsKO||21}`}${t.terceiro?" · Disputa de 3º lugar":""}`}
 function jogoLinha(t,j,opt={}){const r=res(t,j),A=lado(t,j,"a"),B=lado(t,j,"b"),ea=eqDe(t,A),eb=eqDe(t,B);
   const[sa,sb]=contaSets(t,j,r.sets||[]);const cur=(r.sets||[])[(r.sets||[]).length-1]||[0,0];const v=vencedor(t,j);
   const eu=minhaEq(t);const meu=eu&&(eu.id===A||eu.id===B);
@@ -243,17 +243,17 @@ function sortearJogos(t){const Q=+t.quadras||1;let id=0;const lista=[];
   for(let r=0;r<maxR;r++)embaralha(t.grupos.map((g,gi)=>[g,porGrupo[gi][r]||[]])).forEach(([g,jg])=>jg.forEach(([a,b])=>lista.push({id:"j"+(++id),fase:"G",g:g.nome,a,b,melhor:1})));
   agenda(lista,Q,0);
   trSalva(t,{jogos:lista,res:{},status:"jogos"},`${lista.length} jogos sorteados`);go("jogos")}
-function classificacao(t,g){const L={};g.eq.forEach(id=>L[id]={id,J:0,V:0,D:0,PP:0,PC:0});
+function classificacao(t,g){const L={};g.eq.forEach(id=>L[id]={id,P:0,J:0,V:0,D:0,PP:0,PC:0});const PV=t.ptsVit??3;
   const js=(t.jogos||[]).filter(j=>j.fase==="G"&&j.g===g.nome);
   js.forEach(j=>{const r=res(t,j);if(r.st!=="fim")return;const v=vencedor(t,j);if(!v)return;const A=L[j.a],B=L[j.b];if(!A||!B)return;
-    A.J++;B.J++;(r.sets||[]).forEach(s=>{A.PP+=s[0];A.PC+=s[1];B.PP+=s[1];B.PC+=s[0]});if(v===j.a){A.V++;B.D++}else{B.V++;A.D++}});
+    A.J++;B.J++;(r.sets||[]).forEach(s=>{A.PP+=s[0];A.PC+=s[1];B.PP+=s[1];B.PC+=s[0]});if(v===j.a){A.V++;B.D++;A.P+=PV}else{B.V++;A.D++;B.P+=PV}});
   const conf=(x,y)=>{const j=js.find(j=>(j.a===x.id&&j.b===y.id)||(j.a===y.id&&j.b===x.id));const v=j&&vencedor(t,j);return v===x.id?-1:v===y.id?1:0};
-  return Object.values(L).sort((x,y)=>y.V-x.V||(y.PP-y.PC)-(x.PP-x.PC)||y.PP-x.PP||conf(x,y)||g.eq.indexOf(x.id)-g.eq.indexOf(y.id))}
+  return Object.values(L).sort((x,y)=>y.P-x.P||y.V-x.V||(y.PP-y.PC)-(x.PP-x.PC)||y.PP-x.PP||conf(x,y)||g.eq.indexOf(x.id)-g.eq.indexOf(y.id))}
 function ordemSementes(P){let o=[1];while(o.length<P){const m=o.length*2+1;o=o.flatMap(x=>[x,m-x])}return o}
 function gerarMata(t){
   const K=t.classif||2;const tiers=[];
   t.grupos.forEach(g=>classificacao(t,g).slice(0,K).forEach((l,pos)=>{(tiers[pos]=tiers[pos]||[]).push({...l,g:g.nome,pos})}));
-  const seeds=tiers.flatMap(tr=>tr.sort((x,y)=>y.V-x.V||(y.PP-y.PC)-(x.PP-x.PC)||y.PP-x.PP));
+  const seeds=tiers.flatMap(tr=>tr.sort((x,y)=>y.P-x.P||y.V-x.V||(y.PP-y.PC)-(x.PP-x.PC)||y.PP-x.PP));
   const Q=seeds.length;if(Q<2){toast("Poucas equipes classificadas");return}
   const P=2**Math.ceil(Math.log2(Q));const ord=ordemSementes(P);
   const pares=[];for(let i=0;i<P;i+=2)pares.push([seeds[ord[i]-1]||null,seeds[ord[i+1]-1]||null]);
@@ -338,9 +338,9 @@ function renderTabela(){const box=$("#trTab");if(!box)return;const t=trCur();
   const eu=minhaEq(t);
   if(TR.aba==="grupos"){const K=t.classif||2;const anim=Date.now()-TR.animGr<6000;let k=0;
     box.innerHTML=t.grupos.map(g=>{const L=classificacao(t,g);
-      return `<div class="tr-grupo"><h3>Grupo ${g.nome}</h3><table class="tr-tab"><thead><tr><th>#</th><th>Equipe</th><th>J</th><th>V</th><th>D</th><th>Saldo</th><th>PP</th></tr></thead><tbody>
-      ${L.map((l,i)=>{const e=eqDe(t,l.id);return `<tr class="${i<K?"cl":""}${eu&&eu.id===l.id?" eu":""}${anim?" revela":""}" style="animation-delay:${(k++)*.45}s"><td>${i+1}</td><td><span class="tr-eq" style="--c:${e.cor}"><i></i>${esc(e.nome)}</span>${g.eq[0]===l.id?'<small class="cab">cabeça de chave</small>':""}</td><td>${l.J}</td><td>${l.V}</td><td>${l.D}</td><td>${l.PP-l.PC>0?"+":""}${l.PP-l.PC}</td><td>${l.PP}</td></tr>`}).join("")}</tbody></table></div>`}).join("")+
-      `<p class="note">Classificam ${K} por grupo (em verde). Desempate: vitórias, saldo de pontos, pontos feitos e confronto direto.</p>`;return}
+      return `<div class="tr-grupo"><h3>Grupo ${g.nome}</h3><table class="tr-tab"><thead><tr><th>#</th><th>Equipe</th><th class="pts">Pts</th><th>J</th><th>V</th><th>D</th><th>Saldo</th><th>PP</th></tr></thead><tbody>
+      ${L.map((l,i)=>{const e=eqDe(t,l.id);return `<tr class="${i<K?"cl":""}${eu&&eu.id===l.id?" eu":""}${anim?" revela":""}" style="animation-delay:${(k++)*.45}s"><td>${i+1}</td><td><span class="tr-eq" style="--c:${e.cor}"><i></i>${esc(e.nome)}</span>${g.eq[0]===l.id?'<small class="cab">cabeça de chave</small>':""}</td><td class="pts">${l.P}</td><td>${l.J}</td><td>${l.V}</td><td>${l.D}</td><td>${l.PP-l.PC>0?"+":""}${l.PP-l.PC}</td><td>${l.PP}</td></tr>`}).join("")}</tbody></table></div>`}).join("")+
+      `<p class="note">Classificam ${K} por grupo (em verde). Vitória vale ${t.ptsVit??3} pontos. Desempate: vitórias, saldo de pontos, pontos feitos e confronto direto.</p>`;return}
   const ko=(t.jogos||[]).filter(j=>j.fase!=="G");
   if(!ko.length){box.innerHTML=`<div class="empty">O mata-mata é gerado quando terminar a fase de grupos.</div>`;return}
   const ordem=["O","Q","S","F"].filter(f=>ko.some(j=>j.fase===f));
@@ -355,7 +355,7 @@ $("#trTab").addEventListener("click",e=>{const j=e.target.closest("[data-j]");if
 
 /* ---------- compartilhar ---------- */
 function textoTabela(t){let s=`🏐 ${t.nome}\n`;
-  (t.grupos||[]).forEach(g=>{s+=`\nGrupo ${g.nome}\n`;classificacao(t,g).forEach((l,i)=>s+=`${i+1}. ${nomeEq(t,l.id)} — ${l.V}V ${l.D}D, saldo ${l.PP-l.PC}\n`)});
+  (t.grupos||[]).forEach(g=>{s+=`\nGrupo ${g.nome}\n`;classificacao(t,g).forEach((l,i)=>s+=`${i+1}. ${nomeEq(t,l.id)} — ${l.P} pts (${l.V}V ${l.D}D), saldo ${l.PP-l.PC}\n`)});
   const ko=(t.jogos||[]).filter(j=>j.fase!=="G"&&!j.bye);if(ko.length){s+=`\nMata-mata\n`;ko.forEach(j=>s+=linhaJ(t,j))}
   if(statusT(t)==="fim")s+=`\n🏆 Campeão: ${nomeEq(t,vencedor(t,t.jogos.find(j=>j.fase==="F")))}\n`;return s}
 function linhaJ(t,j){const r=res(t,j);const pl=r.st==="ag"?"x":(r.sets||[]).map(x=>x.join("-")).join(", ");
