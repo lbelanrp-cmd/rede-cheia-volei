@@ -112,3 +112,4 @@
 #v-torneio>div,#v-equipes>div{display:flex;flex-direction:column;gap:12px}
 .tr-tab th.pts,.tr-tab td.pts{font-weight:900;color:var(--fg);font-size:15px}
 .tr-tab th.pts{color:var(--accent-2)}
+#myRole,#v-time{display:none!important}

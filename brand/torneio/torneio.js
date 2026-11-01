@@ -13,9 +13,9 @@ EXTRA.joga=m=>m.papel==="atleta"||m.joga===true||(!GESTORES.includes(m.papel)&&m
 EXTRA.tabs=()=>["torneio","equipes","jogos","tabela","tmais"];
 Object.assign(EXTRA.parent,{elenco:"tmais",carta:"tmais",time:"tmais",presenca:"tmais",sorteio:"tmais",placar:"tmais"});
 EXTRA.startView=()=>"torneio";
-EXTRA.membroExtra=(m,pres)=>pres&&m.papel!=="atleta"?`<label class="chk joga-chk"><input type="checkbox" data-joga="${m.uid}" ${EXTRA.joga(m)?"checked":""}>Atleta</label>`:"";
-$("#members").addEventListener("change",async e=>{const c=e.target.closest("[data-joga]");if(!c)return;
-  try{await updateDoc(doc(db,"times",teamId,"membros",c.dataset.joga),{joga:c.checked});toast(c.checked?"Agora também é atleta":"Não é mais atleta")}catch(err){c.checked=!c.checked;toast("Não consegui alterar")}});
+
+// app só do torneio: sem cargos nem tela de membros
+$("#myRole").hidden=true;
 
 /* ---------- utilidades ---------- */
 const trRef=id=>doc(db,"times",teamId,"torneios",id);
@@ -367,7 +367,7 @@ $("#trShareJ").onclick=()=>{const t=trCur();if(!t)return;let s=`🏐 ${t.nome} �
 /* ---------- mais ---------- */
 function renderTMais(){const box=$("#trMais");if(!box||!me)return;const t=[];
   if(jogaEu())t.push(["carta","Minha carta","Sua carta de atleta"]);
-  if(gestor())t.push(["elenco","Elenco","Cartas e atributos"],["time","Time","Membros e convites"]);
+  if(gestor())t.push(["elenco","Elenco","Cartas e atributos"]);
   t.push(["placar","Placar livre","Placar avulso"]);
   box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile" data-v="${v}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("");
   const o=$("#trOutros");if(!o)return;const cur=trCur();

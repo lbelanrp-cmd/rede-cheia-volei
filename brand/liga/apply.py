@@ -63,6 +63,7 @@ rd = lambda n: open(os.path.join(here, n), encoding="utf-8").read()
 if TORNEIO:
     tdir = os.path.join(ROOT, "brand", "torneio")
     rt = lambda n: open(os.path.join(tdir, n), encoding="utf-8").read()
+    rep('.forEach(m=>notify(`${m.nome} entrou no time como ${nomePapel(m)}.`,"time"));', '.forEach(m=>notify(`${m.nome} entrou no app do torneio.`,"torneio"));')
     rep('<!--@@EXTRA_VIEWS@@-->', rt("torneio.html"))
     rep('/*@@EXTRA_JS@@*/', rt("torneio.js"))
     rep('</style>', rd("liga.css") + rt("torneio.css") + '</style>')
