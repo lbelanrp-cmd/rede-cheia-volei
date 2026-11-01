@@ -18,10 +18,10 @@ service cloud.firestore {
       allow read, write: if logado() && request.auth.uid == uid;
     }
 
-    // Torneio Liga: aponta qual time aparece para quem abre o app sem login
+    // cópia pública que existia para o app separado do torneio: fechada; a comissão só pode apagar
     match /publico/{d} {
-      allow read: if true;
-      allow write: if logado() && gestor(request.resource.data.time);
+      allow read: if false;
+      allow delete: if logado() && gestor(resource.data.time);
     }
 
     match /convites/{codigo} {
@@ -121,11 +121,9 @@ service cloud.firestore {
         allow delete: if fin(t);
       }
 
-      // Torneio Liga: aberto para ler; quem tem o app monta e marca os placares
+      // Torneios (Mais › Torneios no app da Liga): só presidência e diretoria veem e mexem
       match /torneios/{x} {
-        allow read: if true;
-        // o app Torneio Liga abre sem conta: qualquer um com o app monta e marca placares do torneio da Liga
-        allow write: if gestor(t) || get(/databases/$(database)/documents/publico/liga).data.time == t;
+        allow read, write: if membro(t) && papel(t) in ['presidente', 'vicepresidente', 'diretoria'];
       }
 
       match /jogadores/{j} {

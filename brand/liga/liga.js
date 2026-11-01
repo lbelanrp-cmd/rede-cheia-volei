@@ -257,6 +257,7 @@ function renderMais(){
   const box=$("#lgMais");if(!box||!me)return;
   const t=[["presenca","Lista do jogo","Confirmados para o jogo"],["sorteio","Sorteio","Times equilibrados"],["placar","Placar","Pontos e sets"]];
   if(me.carta)t.unshift(["pagar","Mensalidade","Pagar com Pix"]);
+  if(typeof trAcesso==="function"&&trAcesso())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);
   if(gestor())t.push(["time","Time","Membros e convites"]);
   if(typeof finAcesso==="function"&&finAcesso())t.unshift(["financeiro","Financeiro","Mensalidades e despesas"]);
   box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile${v==="financeiro"?" fin":""}" data-v="${v}">${badges[v]?'<span class="dot"></span>':""}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("")}
@@ -335,13 +336,10 @@ EXTRA.start.push(()=>{
   const tk=setInterval(()=>{if(!document.hidden){renderAgenda();renderAvisos()}},60000);unsubs.push(()=>clearInterval(tk));
 });
 
-/* ---- elenco aberto para o app Torneio Liga (abre sem conta): só as cartas, com foto pequena ---- */
-const ELC={sig:"",t:null,fotos:new Map()};
-function elFoto(id,src){return new Promise(res=>{if(!src)return res("");const k=id+":"+src.length+":"+src.slice(-24);if(ELC.fotos.has(k))return res(ELC.fotos.get(k));
-  const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=120;c.width=c.height=s;c.getContext("2d").drawImage(img,0,0,s,s);const u=c.toDataURL("image/jpeg",.7);ELC.fotos.set(k,u);res(u)};img.onerror=()=>res("");img.src=src})}
-function publicaElenco(){if(!gestor()||!teamId||!players.length)return;
-  const sig=players.map(p=>[p.id,p.nome,p.genero,p.pos,p.pos2||"",p.numero||"",(p.attrs||[]).join("."),(p.foto||"").length,p.avaliado!==false].join("|")).sort().join(";");
-  if(sig===ELC.sig)return;ELC.sig=sig;clearTimeout(ELC.t);
-  ELC.t=setTimeout(async()=>{const el={};for(const p of players)el[p.id]={nome:p.nome,genero:p.genero,pos:p.pos,pos2:p.pos2||"",numero:p.numero||"",attrs:p.attrs,avaliado:p.avaliado!==false,tipo:p.tipo||"avulso",foto:await elFoto(p.id,p.foto)};
-    try{await setDoc(doc(db,"publico","liga"),{time:teamId,nome:team?.nome||"Liga da Justiça",elenco:el,em:serverTimestamp()})}catch(e){ELC.sig="";console.warn("elenco",e)}},2500)}
-EXTRA.render.push(publicaElenco);
+/* ---- o torneio agora fica dentro do app: apaga a cópia pública do elenco que existia para o app separado ---- */
+let elencoLimpo=false;
+EXTRA.render.push(()=>{if(elencoLimpo||!gestor()||!teamId)return;elencoLimpo=true;
+  deleteDoc(doc(db,"publico","liga")).catch(()=>{})});
+/* ---- abertura com a zebra ---- */
+(()=>{const i=$("#lgIntro");if(!i)return;const t0=Date.now();const sai=()=>{if(i.classList.contains("sai"))return;i.classList.add("sai");setTimeout(()=>i.remove(),900)};
+  i.addEventListener("click",()=>{if(Date.now()-t0>1200)sai()});setTimeout(sai,matchMedia("(prefers-reduced-motion: reduce)").matches?1500:5200)})();

@@ -71,9 +71,13 @@ if TORNEIO:
     rep('</style>', rd("liga.css") + rt("torneio.css") + '</style>')
 else:
     # funções exclusivas da Liga: agenda, presença em treinos, avisos e rank
-    rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html") + rd("pix.html"))
-    rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js") + rd("pix.js"))
-    rep('</style>', rd("liga.css") + rd("fin.css") + rd("pix.css") + '</style>')
+    rt = lambda n: open(os.path.join(ROOT, "brand", "torneio", n), encoding="utf-8").read()
+    rep('<!--@@EXTRA_VIEWS@@-->', rd("liga.html") + rd("fin.html") + rd("pix.html") + rt("torneio.html"))
+    # abertura com a zebra do ícone
+    rep('<div class="screen auth" id="s-loading">', rd("intro.html") + '<div class="screen auth" id="s-loading">')
+    shutil.copy(os.path.join(ROOT, "brand", "torneio", "zebra.jpg"), os.path.join(ROOT, "www", "zebra.jpg"))
+    rep('/*@@EXTRA_JS@@*/', rd("liga.js") + rd("fin.js") + rd("pix.js") + rt("torneio.js"))
+    rep('</style>', rd("liga.css") + rd("fin.css") + rd("pix.css") + rt("torneio.css") + '.lg-tit b{font-size:min(13vw,56px)}.lg-tit span{font-size:min(17vw,74px)}\n</style>')
     # gerador de QR Code (MIT, Kazuhiko Arase) para o Pix
     shutil.copy(os.path.join(here, "qrcode.js"), os.path.join(ROOT, "www", "qrcode.js"))
     rep('<script type="module">', '<script src="qrcode.js"></script>\n<script type="module">')

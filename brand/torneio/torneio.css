@@ -1,6 +1,5 @@
 
 /* ===== TORNEIO ===== */
-#delBox{display:none!important}
 .tr-hero{position:relative;overflow:hidden;border-radius:18px;padding:18px;background:linear-gradient(120deg,rgba(232,25,125,.35),rgba(47,191,168,.25)),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M0 40L40 0' stroke='%23ffffff' stroke-opacity='.06' stroke-width='8'/%3E%3C/svg%3E"),var(--panel);border:1px solid var(--line)}
 .tr-hero h2{margin:4px 0 6px;font-size:30px;line-height:1}
 .tr-hero p{margin:0;color:var(--muted);font-size:13px}
@@ -109,17 +108,11 @@
 .tr-outro{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--fg);text-align:left}
 .tr-outro.on{border-color:var(--accent-2)}
 .tr-outro span{font-size:12px;color:var(--muted)}
-#v-torneio>div,#v-equipes>div{display:flex;flex-direction:column;gap:12px}
+#trHome,#trEq,#trOutros{display:flex;flex-direction:column;gap:12px}
 .tr-tab th.pts,.tr-tab td.pts{font-weight:900;color:var(--fg);font-size:15px}
 .tr-tab th.pts{color:var(--accent-2)}
-#myRole,#v-time{display:none!important}
 
 /* sem login */
-body.publico #acctBtn,body.publico [data-logout]{display:none!important}
-#authMode,#aGoogle,#s-auth .or,#aBio{display:none!important}
-.tr-voltar{align-self:flex-start}
-.tr-sigo{margin:0 0 8px;background:transparent;border:1px dashed var(--c);color:var(--fg);border-radius:99px;padding:5px 12px;font-weight:700;font-size:12px}
-.tr-sigo.on{background:var(--c);border-style:solid;color:#0b0b0e}
 /* abertura com a zebra */
 .tr-intro{position:fixed;inset:0;z-index:200;display:grid;place-items:center;overflow:hidden;cursor:pointer;
   background:radial-gradient(70% 50% at 20% 15%,rgba(232,25,125,.55),transparent 70%),radial-gradient(70% 50% at 85% 90%,rgba(47,191,168,.45),transparent 70%),#08080b;transition:opacity .9s ease,transform .9s ease}
@@ -149,3 +142,9 @@ body.publico #acctBtn,body.publico [data-logout]{display:none!important}
 .tr-imp .chk em{margin-left:auto;color:var(--muted);font-style:normal;font-size:12px}
 .tr-acao.fixo2{position:sticky;bottom:0;padding-top:8px;background:var(--panel)}
 #impBusca{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--fg);font:inherit;width:100%;box-sizing:border-box}
+
+/* navegação do torneio dentro do app da Liga */
+.tr-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:6}
+.tr-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;border-radius:10px;padding:7px 2px;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.tr-nav button svg{width:20px;height:20px}
+.tr-nav button[aria-pressed="true"]{background:var(--panel-2);color:var(--accent-2)}

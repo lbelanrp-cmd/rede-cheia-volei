@@ -7,15 +7,14 @@ Object.assign(ICON,{
   equipes:'<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 2.7-5 6-5s6 2 6 5M12 20c0-3 1.3-5 4-5s6 2 6 5"/>',
   jogos:'<circle cx="12" cy="12" r="9"/><path d="M12 3c-3 3-3 15 0 18M3.5 9h17M3.5 15h17"/>',
   tabela:'<path d="M4 4h6v4H4zM4 16h6v4H4zM14 10h6v4h-6z"/><path d="M10 6h2v12h-2M12 12h2"/>',
-  tmais:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>'});
-Object.assign(LABEL,{torneio:"Torneio",equipes:"Equipes",jogos:"Jogos",tabela:"Tabela",tmais:"Mais"});
-EXTRA.joga=m=>m.papel==="atleta"||m.joga===true||(!GESTORES.includes(m.papel)&&m.joga!==false);
-EXTRA.tabs=()=>["torneio","equipes","jogos","tabela","tmais"];
-Object.assign(EXTRA.parent,{elenco:"tmais",carta:"tmais",time:"tmais",presenca:"tmais",sorteio:"tmais",placar:"tmais"});
-EXTRA.startView=()=>"torneio";
-
-// app só do torneio: sem cargos nem tela de membros
-$("#myRole").hidden=true;
+  tmais:'<rect x="4" y="4" width="6" height="6" rx="1"/>'});
+Object.assign(LABEL,{torneio:"Torneios",equipes:"Equipes",jogos:"Jogos",tabela:"Tabela"});
+Object.assign(EXTRA.parent,{torneio:"mais",equipes:"mais",jogos:"mais",tabela:"mais"});
+/* área de torneios: só presidente, vice-presidente e diretoria */
+const trAcesso=()=>!!me&&["presidente","vicepresidente","diretoria"].includes(me.papel);
+const TRVIEWS=["torneio","equipes","jogos","tabela"];
+function trNav(){document.querySelectorAll(".tr-nav").forEach(n=>{n.innerHTML=TRVIEWS.map(v=>`<button type="button" data-v="${v}" aria-pressed="${view===v}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg>${v==="torneio"?"Início":LABEL[v]}</button>`).join("")})}
+document.addEventListener("click",e=>{const b=e.target.closest(".tr-nav [data-v]");if(b)go(b.dataset.v)});
 
 /* ---------- utilidades ---------- */
 const trRef=id=>doc(db,"times",teamId,"torneios",id);
@@ -26,7 +25,7 @@ const forca=(e)=>e.ids.map(byId).filter(Boolean).reduce((s,p)=>s+ovr(p),0);
 const media=e=>{const ps=e.ids.map(byId).filter(Boolean);return ps.length?forca(e)/ps.length:0};
 const levanta=p=>p&&(p.pos==="LEV"||p.pos2==="LEV");
 const trLS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
-const minhaEq=t=>me?.carta?(t.equipes||[]).find(e=>e.ids.includes(me.carta)):(TR.publico?(t.equipes||[]).find(e=>e.id===trLS.get("tr_minha_"+t.id)):null);
+const minhaEq=t=>me?.carta?(t.equipes||[]).find(e=>e.ids.includes(me.carta)):null;
 const dataBR=d=>d?d.split("-").reverse().join("/"):"";
 const res=(t,j)=>(t.res||{})[j.id]||{sets:[],st:"ag"};
 const jogoDe=(t,id)=>(t.jogos||[]).find(j=>j.id===id);
@@ -45,7 +44,7 @@ function statusT(t){if(!t)return"vazio";if(t.status==="mata"){const f=(t.jogos||
 
 /* ---------- sincronização ---------- */
 function syncTr(){
-  if(!me||TR.sub)return;
+  if(!me||TR.sub||!trAcesso())return;
   TR.sub=onSnapshot(collection(db,"times",teamId,"torneios"),s=>{
     const antes=trCur();
     TR.lista=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm?.toMillis?.()||Date.now())-(a.criadoEm?.toMillis?.()||Date.now()));
@@ -53,49 +52,21 @@ function syncTr(){
     if(TR.ok&&t&&antes&&t.id===antes.id){
       if(!(antes.equipes||[]).length&&(t.equipes||[]).length)TR.animEq=Date.now();
       if(!(antes.grupos||[]).length&&(t.grupos||[]).length)TR.animGr=Date.now();
-      if(!(antes.jogos||[]).length&&(t.jogos||[]).length&&!gestor())notify("A tabela de jogos do torneio saiu!","jogos");
+      if(!(antes.jogos||[]).length&&(t.jogos||[]).length&&!trAcesso())notify("A tabela de jogos do torneio saiu!","jogos");
       const eu=minhaEq(t);
-      if(eu&&!gestor())(t.jogos||[]).forEach(j=>{const r0=res(antes,j).st,r1=res(t,j).st;const A=lado(t,j,"a"),B=lado(t,j,"b");
+      if(eu&&!trAcesso())(t.jogos||[]).forEach(j=>{const r0=res(antes,j).st,r1=res(t,j).st;const A=lado(t,j,"a"),B=lado(t,j,"b");
         if((A===eu.id||B===eu.id)&&r0==="ag"&&r1==="vivo")notify(`Seu jogo começou: ${nomeEq(t,A)} x ${nomeEq(t,B)}`,"jogos")});
       const ca=statusT(antes),cb=statusT(t);if(ca!=="fim"&&cb==="fim")notify(`Temos campeão: ${nomeEq(t,vencedor(t,t.jogos.find(j=>j.fase==="F")))}!`,"torneio");
     }
-    if(TR.publico)juntaElenco();
-    if(!TR.publico&&gestor()&&t&&(t.inscritos||[]).length&&!t.cartas&&!TR.gerCartas){TR.gerCartas=true;fotoCartas(t.inscritos).then(c=>updateDoc(trRef(t.id),{cartas:c})).catch(()=>{})}
     TR.ok=true;renderTr()},e=>console.warn("torneios",e));
   unsubs.push(()=>{TR.sub&&TR.sub();TR.sub=null})}
 EXTRA.render.push(()=>{syncTr();renderTr()});
-EXTRA.reset.push(()=>{trPubSub&&trPubSub();trPubSub=null;TR.sub=null;TR.ok=false;TR.lista=[];TR.sel=null;TR.publico=false;TR.gerCartas=false;document.body.classList.remove("publico")});
-/* ---------- sem conta: o app abre direto para montar e acompanhar o torneio ---------- */
-EXTRA.semBio=true;EXTRA.semConta=true;
-let trPubSub=null;
-EXTRA.semLogin=()=>{show("loading");$("#trSemPub").hidden=true;trPubSub&&trPubSub();let primeira=true;
-  trPubSub=onSnapshot(doc(db,"publico","liga"),p=>{
-    if(!p.exists()){$("#trSemPub").hidden=false;return}
-    const d=p.data();teamId=d.time;team={nome:d.nome||"Liga da Justiça"};
-    TR.elenco=Object.entries(d.elenco||{}).map(([id,c])=>({id,...c}));juntaElenco();
-    if(primeira){primeira=false;me={papel:"presidente",nome:"",carta:null};TR.publico=true;document.body.classList.add("publico");
-      buildTabs();show("app");go("torneio");syncTr()}
-    renderTr()},e=>{console.warn("publico",e);$("#trSemPub").hidden=false})};
-/* elenco publicado pelo app da Liga + cartas guardadas no torneio */
-function juntaElenco(){const t=trCur();const m=new Map((TR.elenco||[]).map(p=>[p.id,p]));
-  Object.entries(t?.cartas||{}).forEach(([id,c])=>{if(!m.has(id))m.set(id,{id,...c})});players=[...m.values()]}
-(()=>{const l=$("#s-loading");if(l)l.insertAdjacentHTML("beforeend",`<p class="note" id="trSemPub" hidden style="max-width:320px;text-align:center">O elenco da Liga ainda não chegou aqui. Peça para o presidente abrir o app da Liga uma vez (versão nova) que as cartas aparecem.</p>`)})();
-/* cartas do torneio guardadas junto (com foto pequena) para quem acompanha sem login */
-function miniFoto(src){return new Promise(res=>{if(!src)return res("");const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),s=120;c.width=c.height=s;
-  c.getContext("2d").drawImage(img,0,0,s,s);res(c.toDataURL("image/jpeg",.7))};img.onerror=()=>res("");img.src=src})}
-async function fotoCartas(ids){const o={};for(const id of ids){const p=byId(id);if(!p)continue;
-  o[id]={nome:p.nome,genero:p.genero,pos:p.pos,pos2:p.pos2||"",numero:p.numero||"",attrs:p.attrs,avaliado:p.avaliado!==false,tipo:p.tipo||"avulso",foto:await miniFoto(p.foto)}}return o}
-/* abertura com a zebra */
-const TR_INTRO=$("#trIntro")?.outerHTML||"";
-(()=>{const i=$("#trIntro");if(!i)return;const sai=()=>{if(i.classList.contains("sai"))return;i.classList.add("sai");setTimeout(()=>i.remove(),600)};
-  i.addEventListener("click",()=>{if(Date.now()-t0>1200)sai()});const t0=Date.now();setTimeout(sai,matchMedia("(prefers-reduced-motion: reduce)").matches?1500:5200)})();
-window.__intro=()=>{const old=$("#trIntro");if(old)old.remove();document.body.insertAdjacentHTML("afterbegin",TR_INTRO);const i=$("#trIntro");const t0=Date.now();
-  const sai=()=>{if(i.classList.contains("sai"))return;i.classList.add("sai");setTimeout(()=>i.remove(),900)};i.addEventListener("click",()=>{if(Date.now()-t0>1200)sai()});setTimeout(sai,5200)};
-EXTRA.onMark=()=>renderTr();
+EXTRA.reset.push(()=>{TR.sub=null;TR.ok=false;TR.lista=[];TR.sel=null;TR.ins=null});
+{const ant=EXTRA.onMark;EXTRA.onMark=()=>{ant&&ant();if(TRVIEWS.includes(view)&&!trAcesso())return go("mais");trNav();renderTr()}}
 async function trSalva(t,patch,msg){Object.assign(t,patch);renderTr();
   try{await updateDoc(trRef(t.id),patch);if(msg)toast(msg)}catch(e){toast("Não consegui salvar: "+(e.code||e.message))}}
 
-function renderTr(){if(!me||!team)return;renderHome();renderEquipes();renderJogos();renderTabela();renderTMais();renderPlacarJ()}
+function renderTr(){if(!me||!team||!trAcesso())return;renderHome();renderEquipes();renderJogos();renderTabela();renderOutros();renderPlacarJ()}
 
 /* ---------- início ---------- */
 const PASSOS=[["inscricao","Inscrição"],["equipes","Equipes"],["grupos","Grupos"],["jogos","Jogos"],["mata","Mata-mata"],["fim","Campeão"]];
@@ -115,13 +86,13 @@ function jogoLinha(t,j,opt={}){const r=res(t,j),A=lado(t,j,"a"),B=lado(t,j,"b"),
 function renderHome(){const box=$("#trHome");if(!box)return;const t=trCur();
   if(!TR.ok){box.innerHTML=`<div class="empty">Carregando…</div>`;return}
   if(!t){box.innerHTML=`<div class="tr-hero"><span class="tr-kicker">Vôlei de areia 4x4</span><h2>Torneio da Liga</h2><p>Equipes de 2 homens e 2 mulheres, sorteadas com equilíbrio pelas cartas.</p></div>
-    ${gestor()?formCriar():`<div class="empty">Nenhum torneio ainda.</div>`}`;ligaCriar();return}
+    ${trAcesso()?formCriar():`<div class="empty">Nenhum torneio ainda.</div>`}`;ligaCriar();return}
   const st=statusT(t),idx=PASSOS.findIndex(p=>p[0]===st);const js=(t.jogos||[]).filter(j=>!j.bye);
   const feitos=js.filter(j=>res(t,j).st==="fim").length;const vivos=js.filter(j=>res(t,j).st==="vivo");
   const prox=js.filter(j=>res(t,j).st==="ag"&&lado(t,j,"a")&&lado(t,j,"b")).sort((a,b)=>a.slot-b.slot||a.quadra-b.quadra).slice(0,4);
   const eu=minhaEq(t);const meuProx=eu&&js.filter(j=>res(t,j).st!=="fim"&&(lado(t,j,"a")===eu.id||lado(t,j,"b")===eu.id)).sort((a,b)=>a.slot-b.slot)[0];
   let acao="";
-  if(gestor()){
+  if(trAcesso()){
     if(st==="inscricao")acao=`<button class="btn primary big" data-go="equipes" type="button">Escolher atletas e sortear equipes</button>`;
     if(st==="equipes")acao=`<button class="btn primary big" data-act="grupos" type="button">Sortear grupos</button><button class="btn ghost" data-go="equipes" type="button">Ajustar equipes</button>`;
     if(st==="grupos")acao=`<button class="btn primary big" data-act="jogos" type="button">Sortear jogos</button><button class="btn ghost" data-act="regrupos" type="button">Sortear grupos de novo</button>`;
@@ -162,7 +133,7 @@ function ligaCriar(){const f=$("#trNovo");if(!f)return;f.onsubmit=async e=>{e.pr
       status:"inscricao",inscritos:[],equipes:[],reservas:[],grupos:[],jogos:[],res:{},criadoEm:serverTimestamp(),criadoPor:user?.uid||"app"});
     TR.sel=r.id;toast("Torneio criado");go("equipes")}catch(err){$("#tnErr").textContent="Não consegui criar: "+(err.code||err.message);b.disabled=false}}}
 $("#trHome").addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g)return go(g.dataset.go);
-  const a=e.target.closest("[data-act]");if(a&&gestor()){const t=trCur();
+  const a=e.target.closest("[data-act]");if(a&&trAcesso()){const t=trCur();
     if(a.dataset.act==="grupos"||a.dataset.act==="regrupos")return abrirGrupos(t);
     if(a.dataset.act==="jogos")return sortearJogos(t);
     if(a.dataset.act==="mata")return gerarMata(t)}
@@ -172,69 +143,41 @@ $("#trHome").addEventListener("click",e=>{const g=e.target.closest("[data-go]");
 function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
   if(!t){box.innerHTML=`<h2>Equipes</h2><div class="empty">Nenhum torneio criado.</div>`;return}
   const st=statusT(t);
-  if(st==="inscricao"&&gestor()){
-    if(!TR.ins||TR.ins.t!==t.id)TR.ins={t:t.id,set:new Set(t.inscritos||[])};
-    const sel=TR.ins.set;const ps=[...sel].map(byId).filter(Boolean).sort((a,b)=>ovr(b)-ovr(a));
-    const M=ps.filter(p=>p.genero==="M").length,F=ps.filter(p=>p.genero==="F").length;const n=Math.min(Math.floor(M/2),Math.floor(F/2));
+  if(st==="inscricao"&&trAcesso()){
+    if(!TR.ins||TR.ins.t!==t.id)TR.ins={t:t.id,set:new Set(t.inscritos?.length?t.inscritos:players.filter(p=>p.presente).map(p=>p.id))};
+    const sel=TR.ins.set;const ps=players.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+    const M=ps.filter(p=>p.genero==="M"&&sel.has(p.id)).length,F=ps.filter(p=>p.genero==="F"&&sel.has(p.id)).length;const n=Math.min(Math.floor(M/2),Math.floor(F/2));
     const sobra=(M-2*n)+(F-2*n);
-    const linha=p=>`<div class="chk tr-insc"><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${ovr(p)}</em><button type="button" class="tr-tira" data-tira="${p.id}" aria-label="Tirar ${esc(p.nome)} do torneio">×</button></div>`;
-    const grupo=(g,nome)=>{const l=ps.filter(p=>p.genero===g);return l.length?`<div class="grouplabel">${nome} · ${l.length}</div><div class="box tr-ins">${l.map(linha).join("")}</div>`:""};
-    box.innerHTML=`<div class="lg-head"><h2>Inscrição</h2>${ps.length?`<button class="btn ghost" id="trLimpa" type="button">Limpar</button>`:""}</div>
-      <button class="btn ${ps.length?"":"primary "}big tr-importa" id="trImporta" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Importar atletas</button>
-      ${ps.length?`<div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
+    const lista=g=>ps.filter(p=>p.genero===g).map(p=>`<label class="chk"><input type="checkbox" data-ins="${p.id}" ${sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${ovr(p)}</em></label>`).join("")||'<p class="note">Ninguém.</p>';
+    box.innerHTML=`<div class="lg-head"><h2>Inscrição</h2><button class="btn ghost" id="trTodos" type="button">${ps.length&&ps.every(p=>sel.has(p.id))?"Desmarcar todos":"Marcar todos"}</button></div>
+      <p class="note">Marque os atletas da Liga que vão jogar. Cada equipe tem 2 homens e 2 mulheres.</p>
+      <div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
       ${sobra>0&&n>0?`<p class="note">${sobra} atleta${sobra>1?"s":""} ${sobra>1?"vão":"vai"} ficar de reserva (sorteado${sobra>1?"s":""}). Para mais uma equipe faltam ${[2*(n+1)-M>0?`${2*(n+1)-M} ${2*(n+1)-M>1?"homens":"homem"}`:"",2*(n+1)-F>0?`${2*(n+1)-F} ${2*(n+1)-F>1?"mulheres":"mulher"}`:""].filter(Boolean).join(" e ")}.</p>`:""}
-      ${grupo("F","Mulheres")}${grupo("M","Homens")}
-      <div class="tr-acao fixo"><button class="btn primary big" id="trSortEq" type="button" ${n<2?"disabled":""}>${n<2?"Precisa de pelo menos 4 homens e 4 mulheres":`Sortear ${n} equipes`}</button></div>`
-      :`<div class="empty">Toque em <b>Importar atletas</b> e escolha quem vai participar. Cada equipe tem 2 homens e 2 mulheres.</div>`}`;
+      <div class="grouplabel">Mulheres</div><div class="box tr-ins">${lista("F")}</div>
+      <div class="grouplabel">Homens</div><div class="box tr-ins">${lista("M")}</div>
+      <div class="tr-acao fixo"><button class="btn primary big" id="trSortEq" type="button" ${n<2?"disabled":""}>${n<2?"Precisa de pelo menos 4 homens e 4 mulheres":`Sortear ${n} equipes`}</button></div>`;
     return}
   const eqs=t.equipes||[];
-  if(!eqs.length){box.innerHTML=`<h2>Equipes</h2><div class="empty">${gestor()?"":"As equipes ainda não foram sorteadas."}</div>`;return}
-  const fs=eqs.map(forca),dif=Math.max(...fs)-Math.min(...fs);const anim=Date.now()-TR.animEq<4000;const mexe=gestor()&&st==="equipes";
+  if(!eqs.length){box.innerHTML=`<h2>Equipes</h2><div class="empty">${trAcesso()?"":"As equipes ainda não foram sorteadas."}</div>`;return}
+  const fs=eqs.map(forca),dif=Math.max(...fs)-Math.min(...fs);const anim=Date.now()-TR.animEq<4000;const mexe=trAcesso()&&st==="equipes";
   const eu=minhaEq(t);
   box.innerHTML=`<div class="lg-head"><h2>Equipes</h2>${mexe?`<button class="btn ghost" id="trReEq" type="button">Sortear de novo</button>`:""}</div>
     <div class="tr-equil"><span>Equilíbrio</span><b>${dif<=8?"Excelente":dif<=16?"Bom":"Regular"}</b><small>diferença de ${dif} pontos de força entre a mais forte e a mais fraca</small></div>
     ${mexe?`<p class="note">${TR.swap?"Agora toque em outro atleta do mesmo sexo para trocar.":"Toque num atleta e depois em outro do mesmo sexo para trocá-los de equipe. Toque no nome da equipe para renomear."}</p>`:""}
     <div class="tr-eqs">${eqs.map((e,i)=>`<div class="tr-equipe${anim?" revela":""}${eu&&eu.id===e.id?" minha":""}" style="--c:${e.cor};animation-delay:${i*.35}s">
-      <header><button type="button" class="tr-nome" data-ren="${e.id}" ${mexe?"":"disabled"}><i></i>${esc(e.nome)}</button><span class="tr-forca">Força <b>${media(e).toFixed(1)}</b></span></header>${TR.publico?`<button type="button" class="tr-sigo${eu&&eu.id===e.id?" on":""}" data-sigo="${e.id}">${eu&&eu.id===e.id?"✓ Minha equipe":"É a minha equipe"}</button>`:""}
+      <header><button type="button" class="tr-nome" data-ren="${e.id}" ${mexe?"":"disabled"}><i></i>${esc(e.nome)}</button><span class="tr-forca">Força <b>${media(e).toFixed(1)}</b></span></header>
       <div class="tr-cards">${e.ids.map(id=>{const p=byId(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${cardHTML(p,"mini")}</div>`:""}).join("")}</div></div>`).join("")}</div>
     ${(t.reservas||[]).length?`<div class="grouplabel">Reservas</div><div class="tr-cards res">${t.reservas.map(id=>{const p=byId(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${cardHTML(p,"mini")}</div>`:""}).join("")}</div>`:""}
     ${mexe?`<div class="tr-acao"><button class="btn ghost" id="trVoltaIns" type="button">Voltar à inscrição</button><button class="btn primary big" data-act2="grupos" type="button">Confirmar e sortear grupos</button></div>`:""}`}
-/* importar atletas do elenco da Liga para o torneio */
-const insSalva=t=>trSalva(t,{inscritos:[...TR.ins.set]});
-function abrirImporta(t){const imp={sel:new Set(),g:"todos",q:""};
-  const desenha=()=>{const fora=players.filter(p=>!TR.ins.set.has(p.id)).sort((a,b)=>a.nome.localeCompare(b.nome));
-    const vis=fora.filter(p=>(imp.g==="todos"||p.genero===imp.g)&&(!imp.q||p.nome.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").includes(imp.q)));
-    $("#impLista").innerHTML=vis.map(p=>`<label class="chk"><input type="checkbox" data-imp="${p.id}" ${imp.sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.genero==="F"?"♀":"♂"} ${p.pos} · ${ovr(p)}</em></label>`).join("")||`<p class="note">${fora.length?"Ninguém com esse filtro.":"Todo o elenco já está no torneio."}</p>`;
-    document.querySelectorAll("#impSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.g===imp.g));conta()};
-  const conta=()=>{const vis=[...document.querySelectorAll("#impLista [data-imp]")].map(c=>c.dataset.imp);const tudo=vis.length&&vis.every(id=>imp.sel.has(id));
-    $("#impTodos").textContent=tudo?"Desmarcar estes":"Marcar todos estes";$("#impTodos").disabled=!vis.length;
-    const nM=[...imp.sel].map(byId).filter(p=>p?.genero==="M").length,nF=imp.sel.size-nM;
-    $("#impOk").textContent=imp.sel.size?`Importar ${imp.sel.size} (${nM} H · ${nF} M)`:"Escolha os atletas";$("#impOk").disabled=!imp.sel.size};
-  abrirSheet(`<div class="row spread"><h3 style="margin:0">Importar atletas</h3><button class="btn ghost" type="button" data-x>Fechar</button></div>
-    <p class="note" style="margin:4px 0 8px">Elenco da Liga. Marque só quem vai participar do torneio.</p>
-    <input type="search" id="impBusca" placeholder="Buscar pelo nome" autocomplete="off">
-    <div class="seg lg-seg" id="impSeg"><button type="button" data-g="todos">Todos</button><button type="button" data-g="F">Mulheres</button><button type="button" data-g="M">Homens</button></div>
-    <button class="btn ghost" type="button" id="impTodos">Marcar todos estes</button>
-    <div class="box tr-ins tr-imp" id="impLista"></div>
-    <div class="tr-acao fixo2"><button class="btn primary big" type="button" id="impOk">Escolha os atletas</button></div>`,()=>{
-    $("#impBusca").oninput=e=>{imp.q=e.target.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");desenha()};
-    $("#impSeg").onclick=e=>{const b=e.target.closest("[data-g]");if(b){imp.g=b.dataset.g;desenha()}};
-    $("#impLista").onchange=e=>{const c=e.target.closest("[data-imp]");if(!c)return;c.checked?imp.sel.add(c.dataset.imp):imp.sel.delete(c.dataset.imp);conta()};
-    $("#impTodos").onclick=()=>{const vis=[...document.querySelectorAll("#impLista [data-imp]")].map(c=>c.dataset.imp);const tudo=vis.every(id=>imp.sel.has(id));vis.forEach(id=>tudo?imp.sel.delete(id):imp.sel.add(id));desenha()};
-    $("#impOk").onclick=()=>{const n=imp.sel.size;imp.sel.forEach(id=>TR.ins.set.add(id));fecharSheet();insSalva(t).then(()=>toast(`${n} atleta${n>1?"s":""} importado${n>1?"s":""}`))};
-    desenha()})}
-$("#trEq").addEventListener("click",e=>{const b=e.target.closest("[data-sigo]");if(!b)return;const t=trCur();if(!t)return;const k="tr_minha_"+t.id;
-  trLS.set(k,trLS.get(k)===b.dataset.sigo?null:b.dataset.sigo);renderTr();toast(trLS.get(k)?"Sua equipe fica destacada nos jogos":"Equipe desmarcada")});
-$("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!gestor())return;
-  if(e.target.closest("#trImporta"))return abrirImporta(t);
-  const tira=e.target.closest("[data-tira]");if(tira){TR.ins.set.delete(tira.dataset.tira);return insSalva(t)}
-  const lp=e.target.closest("#trLimpa");if(lp){if(lp.dataset.arm!=="1"){lp.dataset.arm="1";lp.textContent="Toque de novo para limpar";setTimeout(()=>renderEquipes(),3000);return}TR.ins.set.clear();return insSalva(t)}
+$("#trEq").addEventListener("change",e=>{const c=e.target.closest("[data-ins]");if(!c||!TR.ins)return;c.checked?TR.ins.set.add(c.dataset.ins):TR.ins.set.delete(c.dataset.ins);renderEquipes()});
+$("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!trAcesso())return;
+  if(e.target.closest("#trTodos")){const tudo=players.every(p=>TR.ins.set.has(p.id));players.forEach(p=>tudo?TR.ins.set.delete(p.id):TR.ins.set.add(p.id));return renderEquipes()}
   if(e.target.closest("#trSortEq")||e.target.closest("#trReEq")){const ids=e.target.closest("#trSortEq")?[...TR.ins.set]:t.inscritos;return sortearEquipes(t,ids)}
   if(e.target.closest("#trVoltaIns"))return trSalva(t,{status:"inscricao",equipes:[],reservas:[]});
   if(e.target.closest("[data-act2=grupos]"))return abrirGrupos(t);
-  const rn=e.target.closest("[data-ren]");if(rn){const eq=eqDe(t,rn.dataset.ren);return abrirSheet(`<h3>Nome da equipe</h3><label class="f">Nome<input type="text" id="trRenI" maxlength="24" value="${esc(eq.nome)}"></label>
+  const rn=e.target.closest("[data-ren]");if(rn){const eq=eqDe(t,rn.dataset.ren);return trAbrirSheet(`<h3>Nome da equipe</h3><label class="f">Nome<input type="text" id="trRenI" maxlength="24" value="${esc(eq.nome)}"></label>
       <div class="two"><button class="btn" type="button" data-x>Cancelar</button><button class="btn primary" type="button" id="trRenOk">Salvar</button></div>`,()=>{
-      $("#trRenOk").onclick=()=>{const v=$("#trRenI").value.trim();if(!v)return;const eqs=t.equipes.map(x=>x.id===eq.id?{...x,nome:v}:x);fecharSheet();trSalva(t,{equipes:eqs})}})}
+      $("#trRenOk").onclick=()=>{const v=$("#trRenI").value.trim();if(!v)return;const eqs=t.equipes.map(x=>x.id===eq.id?{...x,nome:v}:x);trFecharSheet();trSalva(t,{equipes:eqs})}})}
   const sw=e.target.closest("[data-sw]");if(!sw||statusT(t)!=="equipes")return;const id=sw.dataset.sw;
   if(!TR.swap||TR.swap===id){TR.swap=TR.swap===id?null:id;return renderEquipes()}
   const a=byId(TR.swap),b=byId(id);if(!a||!b||a.genero!==b.genero){toast("Troque atletas do mesmo sexo");TR.swap=id;return renderEquipes()}
@@ -259,14 +202,13 @@ async function sortearEquipes(t,ids){
   const cores=embaralha(TCORES);
   const equipes=T.map((e,i)=>({id:"e"+(i+1),nome:"Equipe "+(i+1),cor:cores[i%cores.length],ids:e.sort((x,y)=>x.genero.localeCompare(y.genero)).map(p=>p.id)}));
   TR.animEq=Date.now();TR.swap=null;
-  const cartas=await fotoCartas(ids);
-  trSalva(t,{inscritos:ids,equipes,reservas:resM.concat(resF).map(p=>p.id),cartas,status:"equipes",grupos:[],jogos:[],res:{}},`${n} equipes sorteadas`)}
+  trSalva(t,{inscritos:ids,equipes,reservas:resM.concat(resF).map(p=>p.id),status:"equipes",grupos:[],jogos:[],res:{}},`${n} equipes sorteadas`)}
 
 /* ---------- grupos ---------- */
 function sugestaoGrupos(n){return n<=5?1:n<=8?2:n<=12?3:4}
 function abrirGrupos(t){const n=(t.equipes||[]).length;const g=sugestaoGrupos(n);
   const op=(a,b,sel)=>Array.from({length:b-a+1},(_,i)=>a+i).map(v=>`<option ${v===sel?"selected":""}>${v}</option>`).join("");
-  abrirSheet(`<h3>Sorteio dos grupos</h3><p class="note">${n} equipes. As mais fortes viram cabeças de chave (uma por grupo); as outras são sorteadas por potes.</p>
+  trAbrirSheet(`<h3>Sorteio dos grupos</h3><p class="note">${n} equipes. As mais fortes viram cabeças de chave (uma por grupo); as outras são sorteadas por potes.</p>
     <div class="two"><label class="f">Grupos<select id="tgN">${op(1,Math.max(1,Math.floor(n/2)),g)}</select></label>
     <label class="f">Classificam por grupo<select id="tgK">${op(1,4,g===1?4:2)}</select></label></div>
     <p class="note" id="tgInfo"></p>
@@ -275,7 +217,7 @@ function abrirGrupos(t){const n=(t.equipes||[]).length;const g=sugestaoGrupos(n)
       const ok=K<=Math.floor(n/G)&&Q>=2;const ini=P<=2?"direto na final":"começa nas "+({4:"semifinais",8:"quartas de final",16:"oitavas de final"}[P]||"oitavas de final");
       $("#tgInfo").textContent=ok?`${Q} equipes no mata-mata, ${ini}${P>Q?`; ${P-Q} folga${P-Q>1?"s":""} para as melhores campanhas`:""}.`:"Grupos pequenos demais para essa quantidade de classificados.";$("#tgOk").disabled=!ok};
     $("#tgN").onchange=$("#tgK").onchange=info;info();
-    $("#tgOk").onclick=()=>{const G=+$("#tgN").value,K=+$("#tgK").value;fecharSheet();sortearGrupos(t,G,K)}})}
+    $("#tgOk").onclick=()=>{const G=+$("#tgN").value,K=+$("#tgK").value;trFecharSheet();sortearGrupos(t,G,K)}})}
 function sortearGrupos(t,G,K){
   const fz=new Map(t.equipes.map(e=>[e.id,forca(e)+Math.random()*2]));const eqs=t.equipes.slice().sort((a,b)=>fz.get(b.id)-fz.get(a.id));
   const grupos=Array.from({length:G},(_,i)=>({nome:"ABCDEFGH"[i],eq:[]}));
@@ -349,12 +291,12 @@ $("#trJogos").addEventListener("click",e=>{const j=e.target.closest("[data-j]");
 /* ---------- placar do jogo ---------- */
 function abrirJogo(jid){const t=trCur();const j=jogoDe(t,jid);if(!j)return;
   const A=lado(t,j,"a"),B=lado(t,j,"b");if(!A||!B){toast("Esse jogo ainda depende de outros resultados");return}
-  TR.jogo=jid;TR.manual=false;abrirSheet(`<div id="trPlac"></div>`,()=>renderPlacarJ());}
+  TR.jogo=jid;TR.manual=false;trAbrirSheet(`<div id="trPlac"></div>`,()=>renderPlacarJ());}
 function renderPlacarJ(){const box=$("#trPlac");if(!box||!TR.jogo)return;const t=trCur();const j=jogoDe(t,TR.jogo);if(!j)return;
   const r=res(t,j),sets=(r.sets||[]).map(s=>s.slice());const A=lado(t,j,"a"),B=lado(t,j,"b"),ea=eqDe(t,A),eb=eqDe(t,B);
   const[sa,sb]=contaSets(t,j,sets);const need=Math.ceil(j.melhor/2);const acabou=sa>=need||sb>=need;
   const atual=sets.length&&!setFechado(t,j,sets.length-1,sets[sets.length-1])?sets.length-1:null;
-  const cur=atual!=null?sets[atual]:(acabou&&sets.length?sets[sets.length-1]:[0,0]);const g=gestor()&&r.st!=="fim";const iSet=atual!=null?atual:sets.length;const alv=alvo(t,j,iSet);
+  const cur=atual!=null?sets[atual]:(acabou&&sets.length?sets[sets.length-1]:[0,0]);const g=trAcesso()&&r.st!=="fim";const iSet=atual!=null?atual:sets.length;const alv=alvo(t,j,iSet);
   const cards=e=>`<div class="tr-cards mini4">${e.ids.map(byId).filter(Boolean).map(p=>cardHTML(p,"mini")).join("")}</div>`;
   box.innerHTML=`<div class="row spread"><span class="tr-tag">${FASE[j.fase]}${j.fase==="G"?" "+j.g:""} · Quadra ${j.quadra}</span><button class="btn ghost" type="button" data-x>Fechar</button></div>
     <p class="note" style="margin:6px 0">${j.melhor>1?`Melhor de 3 · Set ${Math.min(iSet+1,3)} até ${alv}`:`1 set até ${alv}`} · vence com 2 de vantagem</p>
@@ -363,14 +305,14 @@ function renderPlacarJ(){const box=$("#trPlac");if(!box||!TR.jogo)return;const t
       <div class="tr-side" style="--c:${eb.cor}"><b class="tr-n">${esc(eb.nome)}</b>${cards(eb)}<button type="button" class="tr-pts" data-p="1" ${g&&!acabou?"":"disabled"}>${cur[1]}</button>${g?`<button type="button" class="minus" data-m="1">−1</button>`:""}${j.melhor>1?`<small>Sets <b>${sb}</b></small>`:""}</div>
     </div>
     ${sets.length?`<p class="tr-sets big">${sets.map((s,i)=>`Set ${i+1}: <b>${s[0]}–${s[1]}</b>`).join(" · ")}</p>`:""}
-    ${r.st==="fim"?`<div class="banner">Vitória de ${esc(nomeEq(t,vencedor(t,j)))}</div>${gestor()?`<button class="btn ghost" type="button" id="trReabre">Corrigir resultado</button>`:""}`:""}
+    ${r.st==="fim"?`<div class="banner">Vitória de ${esc(nomeEq(t,vencedor(t,j)))}</div>${trAcesso()?`<button class="btn ghost" type="button" id="trReabre">Corrigir resultado</button>`:""}`:""}
     ${g&&acabou?`<button class="btn primary big" type="button" id="trFim">Encerrar jogo: vitória de ${esc(sa>sb?ea.nome:eb.nome)}</button>`:""}
     ${g&&!acabou?`<details class="tr-manual"${TR.manual?" open":""}><summary>Digitar o placar</summary>
       ${Array.from({length:j.melhor},(_,i)=>`<div class="two tr-mset"><label class="f">Set ${i+1} · ${esc(ea.nome)}<input type="number" min="0" inputmode="numeric" data-ms="${i}-0" value="${sets[i]?.[0]??""}"></label><label class="f">${esc(eb.nome)}<input type="number" min="0" inputmode="numeric" data-ms="${i}-1" value="${sets[i]?.[1]??""}"></label></div>`).join("")}
       <div class="err" id="trMErr"></div><button class="btn" type="button" id="trMOk">Lançar resultado</button></details>`:""}`;}
 async function salvaRes(t,j,r){t.res=t.res||{};t.res[j.id]=r;renderTr();renderPlacarJ();
   try{await updateDoc(trRef(t.id),{["res."+j.id]:r})}catch(e){toast("Sem conexão: placar não salvo")}}
-$("#trSheet").addEventListener("click",e=>{if(!TR.jogo)return;const t=trCur();const j=jogoDe(t,TR.jogo);if(!j||!gestor())return;
+$("#trSheet").addEventListener("click",e=>{if(!TR.jogo)return;const t=trCur();const j=jogoDe(t,TR.jogo);if(!j||!trAcesso())return;
   const r=res(t,j);const sets=(r.sets||[]).map(s=>s.slice());
   const p=e.target.closest("[data-p]"),m=e.target.closest("[data-m]");
   if(p||m){const k=+(p||m).dataset[p?"p":"m"];let i=sets.length-1;
@@ -379,14 +321,14 @@ $("#trSheet").addEventListener("click",e=>{if(!TR.jogo)return;const t=trCur();co
     if(p)sets[i][k]++;else{if(sets[i][k]===0)return;sets[i][k]--;if(sets[i][0]===0&&sets[i][1]===0&&i>0)sets.pop()}
     if(sets.length===1&&sets[0][0]===0&&sets[0][1]===0)return salvaRes(t,j,{sets:[],st:"ag"});
     return salvaRes(t,j,{sets,st:"vivo"})}
-  if(e.target.closest("#trFim"))return salvaRes(t,j,{sets,st:"fim"}).then(()=>{toast("Jogo encerrado");fecharSheet()});
+  if(e.target.closest("#trFim"))return salvaRes(t,j,{sets,st:"fim"}).then(()=>{toast("Jogo encerrado");trFecharSheet()});
   if(e.target.closest("#trReabre")){const dep=(t.jogos||[]).filter(x=>(x.fa?.j===j.id||x.fb?.j===j.id)&&res(t,x).st!=="ag");
     if(dep.length){toast("O próximo jogo dessa chave já começou. Zere ele antes.");return}return salvaRes(t,j,{sets,st:"vivo"})}
   if(e.target.closest("#trMOk")){const ns=[];for(let i=0;i<j.melhor;i++){const a=$(`[data-ms="${i}-0"]`).value,b=$(`[data-ms="${i}-1"]`).value;if(a===""&&b==="")continue;ns.push([+a||0,+b||0])}
     const err=$("#trMErr");if(!ns.length){err.textContent="Digite o placar.";return}
     if(!ns.every((s,i)=>setFechado(t,j,i,s))){err.textContent=`Cada set precisa chegar a ${alvo(t,j,0)} com 2 de vantagem.`;return}
     const[a,b]=contaSets(t,j,ns),need=Math.ceil(j.melhor/2);if(a<need&&b<need){err.textContent="Falta set para decidir o jogo.";return}
-    return salvaRes(t,j,{sets:ns,st:"fim"}).then(()=>{toast("Resultado lançado");fecharSheet()})}});
+    return salvaRes(t,j,{sets:ns,st:"fim"}).then(()=>{toast("Resultado lançado");trFecharSheet()})}});
 $("#trSheet").addEventListener("toggle",e=>{if(e.target.matches?.(".tr-manual"))TR.manual=e.target.open},true);
 
 /* ---------- tabela: grupos e chave ---------- */
@@ -422,19 +364,15 @@ $("#trShareT").onclick=()=>{const t=trCur();if(t)compartilhar(textoTabela(t),"Ta
 $("#trShareJ").onclick=()=>{const t=trCur();if(!t)return;let s=`🏐 ${t.nome} — jogos\n`,u=null;
   (t.jogos||[]).filter(j=>!j.bye).sort((a,b)=>a.slot-b.slot||a.quadra-b.quadra).forEach(j=>{if(j.slot!==u){u=j.slot;s+=`\nRodada ${u}\n`}s+=linhaJ(t,j)});compartilhar(s,"Jogos do torneio")};
 
-/* ---------- mais ---------- */
-function renderTMais(){const box=$("#trMais");if(!box||!me)return;const t=[];
-
-  box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile" data-v="${v}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("");
-  const o=$("#trOutros");if(!o)return;const cur=trCur();
-  o.innerHTML=`<div class="grouplabel">Torneios</div><div class="lg-list">${TR.lista.map(x=>`<button type="button" class="tr-outro${cur&&cur.id===x.id?" on":""}" data-t="${x.id}"><b>${esc(x.nome)}</b><span>${dataBR(x.data)} · ${({inscricao:"Inscrição",equipes:"Equipes",grupos:"Grupos",jogos:"Fase de grupos",mata:"Mata-mata",fim:"Encerrado"})[statusT(x)]}</span></button>`).join("")||'<div class="empty">Nenhum torneio ainda.</div>'}</div>
-    ${gestor()?`<div class="tr-acao"><button class="btn" type="button" id="trNovoBtn">Novo torneio</button>${cur?`<button class="btn danger" type="button" id="trApaga">Apagar torneio selecionado</button>`:""}</div>`:""}`}
-
+/* ---------- outros torneios (no fim do Início) ---------- */
+function renderOutros(){const o=$("#trOutros");if(!o)return;const cur=trCur();
+  o.innerHTML=TR.lista.length>1||cur?`<div class="grouplabel">Torneios</div><div class="lg-list">${TR.lista.map(x=>`<button type="button" class="tr-outro${cur&&cur.id===x.id?" on":""}" data-t="${x.id}"><b>${esc(x.nome)}</b><span>${dataBR(x.data)} · ${({inscricao:"Inscrição",equipes:"Equipes",grupos:"Grupos",jogos:"Fase de grupos",mata:"Mata-mata",fim:"Encerrado"})[statusT(x)]}</span></button>`).join("")}</div>
+    <div class="tr-acao"><button class="btn" type="button" id="trNovoBtn">Novo torneio</button>${cur?`<button class="btn danger" type="button" id="trApaga">Apagar torneio selecionado</button>`:""}</div>`:""}
 let trApagaArm=false;
 $("#trOutros").addEventListener("click",async e=>{const b=e.target.closest("[data-t]");if(b){TR.sel=b.dataset.t;renderTr();return go("torneio")}
   if(e.target.closest("#trNovoBtn")){TR.sel="__novo";renderTr();return go("torneio")}
   const d=e.target.closest("#trApaga");if(d){const t=trCur();if(!t)return;
-    if(!trApagaArm){trApagaArm=true;d.textContent="Toque de novo para apagar “"+t.nome+"”";setTimeout(()=>{trApagaArm=false;renderTMais()},3500);return}
+    if(!trApagaArm){trApagaArm=true;d.textContent="Toque de novo para apagar “"+t.nome+"”";setTimeout(()=>{trApagaArm=false;renderOutros()},3500);return}
     trApagaArm=false;try{await deleteDoc(trRef(t.id));TR.sel=null;toast("Torneio apagado")}catch(err){toast("Não consegui apagar")}}});
 /* "Novo torneio" mostra o formulário mesmo com outros torneios existentes */
 const _renderHome=renderHome;
@@ -442,6 +380,6 @@ renderHome=function(){if(TR.sel==="__novo"){const box=$("#trHome");box.innerHTML
   $("#trCancNovo").onclick=()=>{TR.sel=null;renderTr()};return}return _renderHome()};
 
 /* ---------- folha (modal) ---------- */
-function abrirSheet(html,depois){$("#trSheet").innerHTML=html;$("#trModal").hidden=false;depois&&depois()}
-function fecharSheet(){$("#trModal").hidden=true;$("#trSheet").innerHTML="";TR.jogo=null}
-$("#trModal").addEventListener("click",e=>{if(e.target.id==="trModal"||e.target.closest("[data-x]"))fecharSheet()});
+function trAbrirSheet(html,depois){$("#trSheet").innerHTML=html;$("#trModal").hidden=false;depois&&depois()}
+function trFecharSheet(){$("#trModal").hidden=true;$("#trSheet").innerHTML="";TR.jogo=null}
+$("#trModal").addEventListener("click",e=>{if(e.target.id==="trModal"||e.target.closest("[data-x]"))trFecharSheet()});

@@ -23,10 +23,6 @@ jobs:
             arquivo: LigaDaJusticaVolei
             tag: liga-v1
             titulo: Liga da Justiça Vôlei
-          - marca: torneio
-            arquivo: TorneioLiga
-            tag: torneio-v1
-            titulo: Torneio Liga
     steps:
       - uses: actions/checkout@v4
 

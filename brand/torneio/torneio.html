@@ -1,22 +1,19 @@
-  <!-- ===== TORNEIO ===== -->
-  <section class="view" id="v-torneio" hidden><div id="trHome"></div></section>
-  <section class="view" id="v-equipes" hidden><div id="trEq"></div></section>
+  <!-- ===== TORNEIOS (Mais › Torneios: presidência e diretoria) ===== -->
+  <section class="view" id="v-torneio" hidden><nav class="tr-nav" aria-label="Torneio"></nav><div id="trHome"></div><div id="trOutros"></div></section>
+  <section class="view" id="v-equipes" hidden><nav class="tr-nav" aria-label="Torneio"></nav><div id="trEq"></div></section>
   <section class="view" id="v-jogos" hidden>
+    <nav class="tr-nav" aria-label="Torneio"></nav>
     <div class="lg-head"><h2>Jogos</h2><button class="btn ghost" id="trShareJ" type="button">Compartilhar</button></div>
     <div class="lg-chips" id="trJF"></div>
     <div id="trJogos" class="lg-list"></div>
   </section>
   <section class="view" id="v-tabela" hidden>
+    <nav class="tr-nav" aria-label="Torneio"></nav>
     <div class="lg-head"><h2>Tabela</h2><button class="btn ghost" id="trShareT" type="button">Compartilhar</button></div>
     <div class="seg lg-seg" id="trTabAba">
       <button data-a="grupos" aria-pressed="true" type="button">Grupos</button>
       <button data-a="chave" aria-pressed="false" type="button">Mata-mata</button>
     </div>
     <div id="trTab"></div>
-  </section>
-  <section class="view" id="v-tmais" hidden>
-    <h2>Mais</h2>
-    <div class="lg-more" id="trMais"></div>
-    <div id="trOutros"></div>
   </section>
   <div class="modal" id="trModal" hidden><div class="sheet" id="trSheet"></div></div>
