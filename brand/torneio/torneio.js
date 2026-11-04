@@ -146,13 +146,15 @@ function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
   if(st==="inscricao"&&trAcesso()){
     if(!TR.ins||TR.ins.t!==t.id)TR.ins={t:t.id,set:new Set(t.inscritos?.length?t.inscritos:players.filter(p=>p.presente).map(p=>p.id))};
     const sel=TR.ins.set;const ps=players.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
-    const M=ps.filter(p=>p.genero==="M"&&sel.has(p.id)).length,F=ps.filter(p=>p.genero==="F"&&sel.has(p.id)).length;const n=Math.min(Math.floor(M/2),Math.floor(F/2));
-    const sobra=(M-2*n)+(F-2*n);
+    const M=ps.filter(p=>p.genero==="M"&&sel.has(p.id)).length,F=ps.filter(p=>p.genero==="F"&&sel.has(p.id)).length;
+    const jt=juntosDe([...sel]),jm=jt?jt.filter(p=>p.genero==="M").length:0,jf=jt?jt.length-jm:0;
+    const nR=Math.min(Math.floor((M-jm)/2),Math.floor((F-jf)/2)),n=nR+(jt?1:0);
+    const sobra=(M-jm-2*nR)+(F-jf-2*nR);
     const lista=g=>ps.filter(p=>p.genero===g).map(p=>`<label class="chk"><input type="checkbox" data-ins="${p.id}" ${sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${ovr(p)}</em></label>`).join("")||'<p class="note">Ninguém.</p>';
     box.innerHTML=`<div class="lg-head"><h2>Inscrição</h2><button class="btn ghost" id="trTodos" type="button">${ps.length&&ps.every(p=>sel.has(p.id))?"Desmarcar todos":"Marcar todos"}</button></div>
       <p class="note">Marque os atletas da Liga que vão jogar. Cada equipe tem 2 homens e 2 mulheres.</p>
       <div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
-      ${sobra>0&&n>0?`<p class="note">${sobra} atleta${sobra>1?"s":""} ${sobra>1?"vão":"vai"} ficar de reserva (sorteado${sobra>1?"s":""}). Para mais uma equipe faltam ${[2*(n+1)-M>0?`${2*(n+1)-M} ${2*(n+1)-M>1?"homens":"homem"}`:"",2*(n+1)-F>0?`${2*(n+1)-F} ${2*(n+1)-F>1?"mulheres":"mulher"}`:""].filter(Boolean).join(" e ")}.</p>`:""}
+      ${sobra>0&&n>0?`<p class="note">${sobra} atleta${sobra>1?"s":""} ${sobra>1?"vão":"vai"} ficar de reserva (sorteado${sobra>1?"s":""}). Para mais uma equipe faltam ${[2*(nR+1)-(M-jm)>0?`${2*(nR+1)-(M-jm)} ${2*(nR+1)-(M-jm)>1?"homens":"homem"}`:"",2*(nR+1)-(F-jf)>0?`${2*(nR+1)-(F-jf)} ${2*(nR+1)-(F-jf)>1?"mulheres":"mulher"}`:""].filter(Boolean).join(" e ")}.</p>`:""}
       <div class="grouplabel">Mulheres</div><div class="box tr-ins">${lista("F")}</div>
       <div class="grouplabel">Homens</div><div class="box tr-ins">${lista("M")}</div>
       <div class="tr-acao fixo"><button class="btn primary big" id="trSortEq" type="button" ${n<2?"disabled":""}>${n<2?"Precisa de pelo menos 4 homens e 4 mulheres":`Sortear ${n} equipes`}</button></div>`;
