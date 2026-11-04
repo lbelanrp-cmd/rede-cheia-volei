@@ -186,7 +186,7 @@ $("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!trAcesso()
   const troca=arr=>arr.map(x=>x===a.id?b.id:x===b.id?a.id:x);
   const eqs=t.equipes.map(x=>({...x,ids:troca(x.ids)}));const rs=troca(t.reservas||[]);TR.swap=null;trSalva(t,{equipes:eqs,reservas:rs},"Atletas trocados")});
 /* atletas que saem sempre na mesma equipe no sorteio (aparecem como sorteados normalmente) */
-const JUNTOS=["Leandrão","João Bombonado","Ligiane","Marcela Pignata"];
+const JUNTOS=["Leandrão","João Bombonato","Ligiane","Marcela Pignata"];
 const semAc=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
 function juntosDe(ids){const us=new Set(),out=[];const cand=ids.map(byId).filter(Boolean);
   for(const nome of JUNTOS){const tk=semAc(nome).split(/\s+/);const livres=cand.filter(p=>!us.has(p.id));
