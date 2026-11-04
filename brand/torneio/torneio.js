@@ -183,26 +183,36 @@ $("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!trAcesso()
   const a=byId(TR.swap),b=byId(id);if(!a||!b||a.genero!==b.genero){toast("Troque atletas do mesmo sexo");TR.swap=id;return renderEquipes()}
   const troca=arr=>arr.map(x=>x===a.id?b.id:x===b.id?a.id:x);
   const eqs=t.equipes.map(x=>({...x,ids:troca(x.ids)}));const rs=troca(t.reservas||[]);TR.swap=null;trSalva(t,{equipes:eqs,reservas:rs},"Atletas trocados")});
+/* atletas que saem sempre na mesma equipe no sorteio (aparecem como sorteados normalmente) */
+const JUNTOS=["Leandrão","João Bombonado","Ligiante","Marcela Pignata"];
+const semAc=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+function juntosDe(ids){const us=new Set(),out=[];const cand=ids.map(byId).filter(Boolean);
+  for(const nome of JUNTOS){const tk=semAc(nome).split(/\s+/);const livres=cand.filter(p=>!us.has(p.id));
+    let p=livres.find(p=>tk.every(w=>semAc(p.nome).includes(w)));
+    if(!p){const um=livres.filter(p=>semAc(p.nome).split(/\s+/).includes(tk[0]));if(um.length===1)p=um[0]}
+    if(!p)return null;us.add(p.id);out.push(p)}
+  return out}
 async function sortearEquipes(t,ids){
-  const ps=ids.map(byId).filter(Boolean);let M=embaralha(ps.filter(p=>p.genero==="M")),F=embaralha(ps.filter(p=>p.genero==="F"));
-  const n=Math.min(Math.floor(M.length/2),Math.floor(F.length/2));if(n<2){toast("Precisa de pelo menos 4 homens e 4 mulheres");return}
+  const jt=juntosDe(ids);const ps=ids.map(byId).filter(Boolean).filter(p=>!jt||!jt.includes(p));let M=embaralha(ps.filter(p=>p.genero==="M")),F=embaralha(ps.filter(p=>p.genero==="F"));
+  const n=Math.min(Math.floor(M.length/2),Math.floor(F.length/2));if(n+(jt?1:0)<2||n<1){toast("Precisa de pelo menos 4 homens e 4 mulheres");return}
   const resM=M.slice(2*n),resF=F.slice(2*n);M=M.slice(0,2*n);F=F.slice(0,2*n);
   const rz=new Map(ps.map(p=>[p.id,ovr(p)+Math.random()*4]));
   const T=Array.from({length:n},()=>[]);
   const cobra=(arr,inv)=>arr.sort((x,y)=>rz.get(y.id)-rz.get(x.id)).forEach((p,i)=>{const r=Math.floor(i/n),k=i%n;let idx=r%2===0?k:n-1-k;if(inv)idx=n-1-idx;T[idx].push(p)});
   cobra(M,false);cobra(F,true);
-  const nLev=ps.filter(levanta).length;const craque=p=>ovr(p)>=90;
+  const fix=jt?Math.floor(Math.random()*(n+1)):-1;if(jt)T.splice(fix,0,jt.slice());const nT=T.length;
+  const nLev=(jt||[]).concat(ps).filter(levanta).length;const craque=p=>ovr(p)>=90;
   // craques (over 90+) espalhados: no máximo um a mais numa equipe do que em outra
-  const custo=()=>{const s=T.map(e=>e.reduce((a,p)=>a+ovr(p),0));let c=Math.max(...s)-Math.min(...s);if(nLev>=n)c+=12*T.filter(e=>!e.some(levanta)).length;
+  const custo=()=>{const s=T.map(e=>e.reduce((a,p)=>a+ovr(p),0));let c=Math.max(...s)-Math.min(...s);if(nLev>=nT)c+=12*T.filter(e=>!e.some(levanta)).length;
     const k=T.map(e=>e.filter(craque).length);c+=25*Math.max(0,Math.max(...k)-Math.min(...k)-1)+25*(Math.max(...k)-Math.min(...k));return c};
   for(let it=0;it<300;it++){let best=null,bv=custo();
-    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)for(let a=0;a<4;a++)for(let b=0;b<4;b++){const pa=T[i][a],pb=T[j][b];if(!pa||!pb||pa.genero!==pb.genero)continue;
-      T[i][a]=pb;T[j][b]=pa;const v=custo();T[i][a]=pa;T[j][b]=pb;if(v<bv-.01){bv=v;best=[i,j,a,b]}}
+    for(let i=0;i<nT;i++)for(let j=i+1;j<nT;j++){if(i===fix||j===fix)continue;for(let a=0;a<4;a++)for(let b=0;b<4;b++){const pa=T[i][a],pb=T[j][b];if(!pa||!pb||pa.genero!==pb.genero)continue;
+      T[i][a]=pb;T[j][b]=pa;const v=custo();T[i][a]=pa;T[j][b]=pb;if(v<bv-.01){bv=v;best=[i,j,a,b]}}}
     if(!best)break;const[i,j,a,b]=best;[T[i][a],T[j][b]]=[T[j][b],T[i][a]]}
   const cores=embaralha(TCORES);
   const equipes=T.map((e,i)=>({id:"e"+(i+1),nome:"Equipe "+(i+1),cor:cores[i%cores.length],ids:e.sort((x,y)=>x.genero.localeCompare(y.genero)).map(p=>p.id)}));
   TR.animEq=Date.now();TR.swap=null;
-  trSalva(t,{inscritos:ids,equipes,reservas:resM.concat(resF).map(p=>p.id),status:"equipes",grupos:[],jogos:[],res:{}},`${n} equipes sorteadas`)}
+  trSalva(t,{inscritos:ids,equipes,reservas:resM.concat(resF).map(p=>p.id),status:"equipes",grupos:[],jogos:[],res:{}},`${equipes.length} equipes sorteadas`)}
 
 /* ---------- grupos ---------- */
 function sugestaoGrupos(n){return n<=5?1:n<=8?2:n<=12?3:4}
