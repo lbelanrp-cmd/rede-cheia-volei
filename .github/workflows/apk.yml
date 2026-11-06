@@ -23,6 +23,10 @@ jobs:
             arquivo: LigaDaJusticaVolei
             tag: liga-v1
             titulo: Liga da Justiça Vôlei
+          - marca: alpha
+            arquivo: AlphaBeachVolei
+            tag: alpha-v1
+            titulo: AlphaBeach Vôlei
     steps:
       - uses: actions/checkout@v4
 

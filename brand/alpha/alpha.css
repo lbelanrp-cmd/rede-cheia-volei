@@ -1,0 +1,36 @@
+
+/* ===== ALPHABEACH: identidade verde e amarela ===== */
+:root{--bg:#0a170c;--panel:#112615;--panel-2:#18341d;--line:#2a5130;--fg:#ffffff;--muted:#b9cdb6;--accent:#fff200;--accent-2:#fff200;--accent-3:#fff200;--ok:#7ddc6a}
+body{background:radial-gradient(90% 45% at 0% 0%,rgba(255,242,0,.13),transparent 60%),radial-gradient(90% 45% at 100% 100%,rgba(46,125,58,.35),transparent 60%),var(--bg);background-attachment:fixed}
+.brand{color:#fff200;text-shadow:2px 2px 0 #1a4120;letter-spacing:.03em}
+.brand span{color:#fff}
+.btn.primary{background:#fff200;border-color:#fff200;color:#0a170c}
+.chip[aria-pressed="true"],.seg button[aria-pressed="true"]{background:#fff200;border-color:#fff200;color:#0a170c}
+.tabs{border-top:2px solid #fff200}
+.tabs button[aria-current="page"]{color:#fff200}
+.toggle.on{background:rgba(255,242,0,.12);border-color:#fff200;color:#fff200}
+.notice{border-color:#fff200}
+.notice svg{color:#fff200}
+.tr-passos li.agora i{background:#fff200;border-color:#fff200;color:#0a170c;box-shadow:0 0 0 4px rgba(255,242,0,.25)}
+.tr-passos li.ok i{background:#2e7d3a;border-color:#2e7d3a;color:#fff}
+.tr-hero{background:linear-gradient(120deg,rgba(255,242,0,.18),rgba(46,125,58,.35)),var(--panel)}
+.kpi.caixa{background:linear-gradient(100deg,rgba(255,242,0,.14),rgba(46,125,58,.3));border-color:#fff200}
+/* carta Diamante verde e amarela */
+.tier-craque{--d1:#fffbb0;--d2:#fff200;--d3:#2e7d3a;--d4:#06140a;--m1:#ffffff;--m3:#fff200;--ink:#ffffff;--ink2:rgba(255,255,255,.85);--glow:rgba(255,242,0,.75)}
+.tier-craque .crest{background:#fff200;color:#1a4120}
+/* abertura com o escudo */
+.al-intro{background:radial-gradient(70% 50% at 20% 15%,rgba(255,242,0,.35),transparent 70%),radial-gradient(70% 50% at 85% 90%,rgba(46,125,58,.6),transparent 70%),#0a170c}
+.al-intro .tr-listras{background:repeating-linear-gradient(90deg,rgba(255,242,0,.07) 0 34px,transparent 34px 80px)}
+.al-escudo{width:min(66vw,280px);aspect-ratio:auto;border-radius:0;overflow:visible;box-shadow:none;filter:drop-shadow(0 16px 34px rgba(0,0,0,.55)) drop-shadow(0 0 22px rgba(255,242,0,.35))}
+.al-escudo img{object-fit:contain;height:auto}
+.al-intro .tr-titulo{color:#fff200;text-shadow:3px 3px 0 #1a4120,0 0 18px rgba(255,242,0,.35)}
+.al-intro .tr-titulo span{color:#fff}
+/* configurar o time */
+#cfBody{display:flex;flex-direction:column;gap:12px}
+.cf-boas{background:linear-gradient(120deg,rgba(255,242,0,.2),rgba(46,125,58,.35));border:1px solid #fff200;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.cf-boas span{color:var(--muted);font-size:13px}
+.cf-sec{display:flex;flex-direction:column;gap:10px}
+.cf-sec h3{margin:0;display:flex;align-items:center;gap:8px}
+.cf-sec h3 i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#fff200;color:#0a170c;font-size:14px}
+.cf-quadra,.cf-treino{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel-2)}
+.cf-x{align-self:flex-start;padding:6px 10px!important;font-size:13px}

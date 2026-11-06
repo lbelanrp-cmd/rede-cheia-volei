@@ -188,7 +188,7 @@ $("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!trAcesso()
 /* atletas que saem sempre na mesma equipe no sorteio (aparecem como sorteados normalmente) */
 const JUNTOS=["Leandrão","João Bombonato","Ligiane","Marcela Pignata"];
 const semAc=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-function juntosDe(ids){const us=new Set(),out=[];const cand=ids.map(byId).filter(Boolean);
+function juntosDe(ids){if(!JUNTOS.length)return null;const us=new Set(),out=[];const cand=ids.map(byId).filter(Boolean);
   for(const nome of JUNTOS){const tk=semAc(nome).split(/\s+/);const livres=cand.filter(p=>!us.has(p.id));
     let p=livres.find(p=>tk.every(w=>semAc(p.nome).includes(w)));
     if(!p){const um=livres.filter(p=>semAc(p.nome).split(/\s+/).includes(tk[0]));if(um.length===1)p=um[0]}
