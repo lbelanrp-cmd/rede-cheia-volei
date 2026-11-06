@@ -10,7 +10,9 @@ service cloud.firestore {
     function presidente(t) { return membro(t) && papel(t) == 'presidente'; }
     function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
     // financeiro: só o presidente e o(a) tesoureiro(a)
-    function fin(t) { return presidente(t) || (membro(t) && papel(t) == 'tesoureiro'); }
+    function fin(t) { return presidente(t) || (membro(t) && (papel(t) == 'tesoureiro'
+      // AlphaBeach: o time nasce com finVice e o vice-presidente também cuida do financeiro
+      || (papel(t) == 'vicepresidente' && get(/databases/$(database)/documents/times/$(t)).data.get('finVice', false) == true))); }
     // diretoria: vê as assembleias
     function diretoria(t) { return gestor(t) || (membro(t) && papel(t) in ['tesoureiro', 'diretoria']); }
 
@@ -39,7 +41,8 @@ service cloud.firestore {
     match /times/{t} {
       allow read: if membro(t);
       allow create: if logado() && request.resource.data.criadoPor == request.auth.uid;
-      allow update: if gestor(t);
+      // só o presidente muda quem cuida do financeiro
+      allow update: if presidente(t) || (gestor(t) && !mudou().hasAny(['finVice']));
       allow delete: if presidente(t);
 
       match /membros/{uid} {
