@@ -257,7 +257,7 @@ function renderMais(){
   const box=$("#lgMais");if(!box||!me)return;
   const t=[["presenca","Lista do jogo","Confirmados para o jogo"],["sorteio","Sorteio","Times equilibrados"],["placar","Placar","Pontos e sets"]];
   if(me.carta)t.unshift(["pagar","Mensalidade","Pagar com Pix"]);
-  if(typeof trAcesso==="function"&&trAcesso())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);
+  if(typeof trVe==="function"&&trVe())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);
   if(gestor())t.push(["time","Time","Membros e convites"]);
   if(typeof finAcesso==="function"&&finAcesso())t.unshift(["financeiro","Financeiro","Mensalidades e despesas"]);
   box.innerHTML=t.map(([v,n,d])=>`<button type="button" class="lg-tile${v==="financeiro"?" fin":""}" data-v="${v}">${badges[v]?'<span class="dot"></span>':""}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg><b>${n}</b><span>${d}</span></button>`).join("")}

@@ -13,6 +13,8 @@ service cloud.firestore {
     function fin(t) { return presidente(t) || (membro(t) && (papel(t) == 'tesoureiro'
       // AlphaBeach: o time nasce com finVice e o vice-presidente também cuida do financeiro
       || (papel(t) == 'vicepresidente' && get(/databases/$(database)/documents/times/$(t)).data.get('finVice', false) == true))); }
+    // torneios: presidente; no AlphaBeach (finVice) também o vice-presidente
+    function trChefe(t) { return presidente(t) || (membro(t) && papel(t) == 'vicepresidente' && get(/databases/$(database)/documents/times/$(t)).data.get('finVice', false) == true); }
     // diretoria: vê as assembleias
     function diretoria(t) { return gestor(t) || (membro(t) && papel(t) in ['tesoureiro', 'diretoria']); }
 
@@ -124,9 +126,13 @@ service cloud.firestore {
         allow delete: if fin(t);
       }
 
-      // Torneios (Mais › Torneios no app da Liga): só presidência e diretoria veem e mexem
+      // Torneios: todo o time acompanha; quem cria/apaga é o presidente (no AlphaBeach também o vice);
+      // os ajudantes escolhidos pelo presidente em cada torneio gerenciam sorteios e placares
       match /torneios/{x} {
-        allow read, write: if membro(t) && papel(t) in ['presidente', 'vicepresidente', 'diretoria'];
+        allow read: if membro(t);
+        allow create, delete: if trChefe(t);
+        allow update: if trChefe(t)
+          || (membro(t) && request.auth.uid in resource.data.get('ajudantes', []) && !mudou().hasAny(['ajudantes']));
       }
 
       match /jogadores/{j} {

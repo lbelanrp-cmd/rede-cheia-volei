@@ -148,3 +148,8 @@
 .tr-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;border-radius:10px;padding:7px 2px;color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
 .tr-nav button svg{width:20px;height:20px}
 .tr-nav button[aria-pressed="true"]{background:var(--panel-2);color:var(--accent-2)}
+
+/* ajudantes do torneio */
+.tr-ajud summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none}
+.tr-ajud summary span{color:var(--muted);font-size:13px}
+.tr-ajud .chk em{margin-left:auto;color:var(--muted);font-style:normal;font-size:12px}

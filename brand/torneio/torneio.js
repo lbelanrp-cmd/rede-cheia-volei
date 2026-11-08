@@ -11,7 +11,10 @@ Object.assign(ICON,{
 Object.assign(LABEL,{torneio:"Torneios",equipes:"Equipes",jogos:"Jogos",tabela:"Tabela"});
 Object.assign(EXTRA.parent,{torneio:"mais",equipes:"mais",jogos:"mais",tabela:"mais"});
 /* área de torneios: só presidente, vice-presidente e diretoria */
-const trAcesso=()=>!!me&&["presidente","vicepresidente","diretoria"].includes(me.papel);
+// quem vê os torneios (Liga: todos do time), quem cria/apaga (Liga: presidente) e quem gerencia (presidente + ajudantes do torneio)
+const trVe=()=>!!me;
+const trCria=()=>!!me&&me.papel==="presidente";
+const trAcesso=()=>{const t=trCur();return trCria()||(!!t&&!!user&&(t.ajudantes||[]).includes(user.uid))};
 const TRVIEWS=["torneio","equipes","jogos","tabela"];
 function trNav(){document.querySelectorAll(".tr-nav").forEach(n=>{n.innerHTML=TRVIEWS.map(v=>`<button type="button" data-v="${v}" aria-pressed="${view===v}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICON[v]}</svg>${v==="torneio"?"Início":LABEL[v]}</button>`).join("")})}
 document.addEventListener("click",e=>{const b=e.target.closest(".tr-nav [data-v]");if(b)go(b.dataset.v)});
@@ -44,7 +47,7 @@ function statusT(t){if(!t)return"vazio";if(t.status==="mata"){const f=(t.jogos||
 
 /* ---------- sincronização ---------- */
 function syncTr(){
-  if(!me||TR.sub||!trAcesso())return;
+  if(!me||TR.sub||!trVe())return;
   TR.sub=onSnapshot(collection(db,"times",teamId,"torneios"),s=>{
     const antes=trCur();
     TR.lista=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.criadoEm?.toMillis?.()||Date.now())-(a.criadoEm?.toMillis?.()||Date.now()));
@@ -62,11 +65,11 @@ function syncTr(){
   unsubs.push(()=>{TR.sub&&TR.sub();TR.sub=null})}
 EXTRA.render.push(()=>{syncTr();renderTr()});
 EXTRA.reset.push(()=>{TR.sub=null;TR.ok=false;TR.lista=[];TR.sel=null;TR.ins=null});
-{const ant=EXTRA.onMark;EXTRA.onMark=()=>{ant&&ant();if(TRVIEWS.includes(view)&&!trAcesso())return go("mais");trNav();renderTr()}}
+{const ant=EXTRA.onMark;EXTRA.onMark=()=>{ant&&ant();if(TRVIEWS.includes(view)&&!trVe())return go("mais");trNav();renderTr()}}
 async function trSalva(t,patch,msg){Object.assign(t,patch);renderTr();
   try{await updateDoc(trRef(t.id),patch);if(msg)toast(msg)}catch(e){toast("Não consegui salvar: "+(e.code||e.message))}}
 
-function renderTr(){if(!me||!team||!trAcesso())return;renderHome();renderEquipes();renderJogos();renderTabela();renderOutros();renderPlacarJ()}
+function renderTr(){if(!me||!team||!trVe())return;renderHome();renderEquipes();renderJogos();renderTabela();renderOutros();renderPlacarJ()}
 
 /* ---------- início ---------- */
 const PASSOS=[["inscricao","Inscrição"],["equipes","Equipes"],["grupos","Grupos"],["jogos","Jogos"],["mata","Mata-mata"],["fim","Campeão"]];
@@ -86,7 +89,7 @@ function jogoLinha(t,j,opt={}){const r=res(t,j),A=lado(t,j,"a"),B=lado(t,j,"b"),
 function renderHome(){const box=$("#trHome");if(!box)return;const t=trCur();
   if(!TR.ok){box.innerHTML=`<div class="empty">Carregando…</div>`;return}
   if(!t){box.innerHTML=`<div class="tr-hero"><span class="tr-kicker">Vôlei de areia 4x4</span><h2>Torneio da Liga</h2><p>Equipes de 2 homens e 2 mulheres, sorteadas com equilíbrio pelas cartas.</p></div>
-    ${trAcesso()?formCriar():`<div class="empty">Nenhum torneio ainda.</div>`}`;ligaCriar();return}
+    ${trCria()?formCriar():`<div class="empty">Nenhum torneio ainda.</div>`}`;ligaCriar();return}
   const st=statusT(t),idx=PASSOS.findIndex(p=>p[0]===st);const js=(t.jogos||[]).filter(j=>!j.bye);
   const feitos=js.filter(j=>res(t,j).st==="fim").length;const vivos=js.filter(j=>res(t,j).st==="vivo");
   const prox=js.filter(j=>res(t,j).st==="ag"&&lado(t,j,"a")&&lado(t,j,"b")).sort((a,b)=>a.slot-b.slot||a.quadra-b.quadra).slice(0,4);
@@ -377,11 +380,19 @@ $("#trShareJ").onclick=()=>{const t=trCur();if(!t)return;let s=`🏐 ${t.nome} �
   (t.jogos||[]).filter(j=>!j.bye).sort((a,b)=>a.slot-b.slot||a.quadra-b.quadra).forEach(j=>{if(j.slot!==u){u=j.slot;s+=`\nRodada ${u}\n`}s+=linhaJ(t,j)});compartilhar(s,"Jogos do torneio")};
 
 /* ---------- outros torneios (no fim do Início) ---------- */
+function ajudantesHTML(t){if(!t||!trCria())return"";const aj=new Set(t.ajudantes||[]);
+  const ms=(members||[]).filter(m=>m.uid!==user?.uid).sort((a,b)=>(a.nome||"").localeCompare(b.nome||""));
+  return `<details class="box tr-ajud"${aj.size?"":" open"}><summary><b>Ajudantes na gestão</b><span>${aj.size?aj.size+" pessoa"+(aj.size>1?"s":""):"ninguém ainda"}</span></summary>
+    <p class="note" style="margin:6px 0">Quem você marcar pode sortear equipes, grupos e jogos e marcar placares deste torneio. Só você cria e apaga torneios.</p>
+    ${ms.map(m=>`<label class="chk"><input type="checkbox" data-ajud="${m.uid}" ${aj.has(m.uid)?"checked":""}><b>${esc(m.nome||m.email||"Sem nome")}</b><em>${esc(nomePapel(m))}</em></label>`).join("")||'<p class="note">Ninguém além de você no time.</p>'}</details>`}
 function renderOutros(){const o=$("#trOutros");if(!o)return;const cur=trCur();
-  o.innerHTML=TR.lista.length>1||cur?`<div class="grouplabel">Torneios</div><div class="lg-list">${TR.lista.map(x=>`<button type="button" class="tr-outro${cur&&cur.id===x.id?" on":""}" data-t="${x.id}"><b>${esc(x.nome)}</b><span>${dataBR(x.data)} · ${({inscricao:"Inscrição",equipes:"Equipes",grupos:"Grupos",jogos:"Fase de grupos",mata:"Mata-mata",fim:"Encerrado"})[statusT(x)]}</span></button>`).join("")}</div>
-    <div class="tr-acao"><button class="btn" type="button" id="trNovoBtn">Novo torneio</button>${cur?`<button class="btn danger" type="button" id="trApaga">Apagar torneio selecionado</button>`:""}</div>`:""}
+  o.innerHTML=ajudantesHTML(cur)+(TR.lista.length>1||cur?`<div class="grouplabel">Torneios</div><div class="lg-list">${TR.lista.map(x=>`<button type="button" class="tr-outro${cur&&cur.id===x.id?" on":""}" data-t="${x.id}"><b>${esc(x.nome)}</b><span>${dataBR(x.data)} · ${({inscricao:"Inscrição",equipes:"Equipes",grupos:"Grupos",jogos:"Fase de grupos",mata:"Mata-mata",fim:"Encerrado"})[statusT(x)]}</span></button>`).join("")}</div>
+    ${trCria()?`<div class="tr-acao"><button class="btn" type="button" id="trNovoBtn">Novo torneio</button>${cur?`<button class="btn danger" type="button" id="trApaga">Apagar torneio selecionado</button>`:""}</div>`:""}`:"")}
+$("#trOutros").addEventListener("change",e=>{const c=e.target.closest("[data-ajud]");if(!c||!trCria())return;const t=trCur();if(!t)return;
+  const aj=new Set(t.ajudantes||[]);c.checked?aj.add(c.dataset.ajud):aj.delete(c.dataset.ajud);trSalva(t,{ajudantes:[...aj]},c.checked?"Ajudante adicionado":"Ajudante removido")});
 let trApagaArm=false;
 $("#trOutros").addEventListener("click",async e=>{const b=e.target.closest("[data-t]");if(b){TR.sel=b.dataset.t;renderTr();return go("torneio")}
+  if(!trCria())return;
   if(e.target.closest("#trNovoBtn")){TR.sel="__novo";renderTr();return go("torneio")}
   const d=e.target.closest("#trApaga");if(d){const t=trCur();if(!t)return;
     if(!trApagaArm){trApagaArm=true;d.textContent="Toque de novo para apagar “"+t.nome+"”";setTimeout(()=>{trApagaArm=false;renderOutros()},3500);return}

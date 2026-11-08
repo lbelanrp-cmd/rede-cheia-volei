@@ -32,7 +32,8 @@ rep('const GESTORES=["presidente","vicepresidente","capitao","capita","professor
 rep('const finAcesso=()=>!!me&&(me.papel==="presidente"||me.papel==="tesoureiro");', 'const finAcesso=()=>!!me&&(me.papel==="presidente"||me.papel==="vicepresidente");')
 rep('b.set(t,{nome,criadoPor:user.uid,criadoEm:serverTimestamp(),modo:6,', 'b.set(t,{nome,criadoPor:user.uid,criadoEm:serverTimestamp(),finVice:true,configOk:false,modo:6,')
 # assembleias e torneios: presidente e vice-presidente
-rep('const trAcesso=()=>!!me&&["presidente","vicepresidente","diretoria"].includes(me.papel);', 'const trAcesso=()=>!!me&&["presidente","vicepresidente"].includes(me.papel);')
+rep('const trVe=()=>!!me;', 'const trVe=()=>!!me&&["presidente","vicepresidente"].includes(me.papel);')
+rep('const trCria=()=>!!me&&me.papel==="presidente";', 'const trCria=()=>!!me&&["presidente","vicepresidente"].includes(me.papel);')
 # torneio: só sorteio equilibrado (sem atletas que saem sempre juntos)
 s = re.sub(r'const JUNTOS=\[[^\]]*\];', 'const JUNTOS=[];', s, count=1)
 # treinos vêm da configuração do presidente (sem os treinos da Liga)
@@ -53,8 +54,8 @@ try: os.remove(os.path.join(ROOT, "www", "zebra.jpg"))
 except OSError: pass
 # configurar o time (presidente)
 rep('<div class="modal" id="trModal" hidden>', rd("config.html") + '  <div class="modal" id="trModal" hidden>')
-rep('  if(typeof trAcesso==="function"&&trAcesso())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);',
-    '  if(typeof trAcesso==="function"&&trAcesso())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);\n  if(typeof cfgTime==="function"&&cfgTime())t.unshift(["config","Configurar o time","Quadras, treinos e Pix"]);')
+rep('  if(typeof trVe==="function"&&trVe())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);',
+    '  if(typeof trVe==="function"&&trVe())t.unshift(["torneio","Torneios","Grupos, jogos e chave"]);\n  if(typeof cfgTime==="function"&&cfgTime())t.unshift(["config","Configurar o time","Quadras, treinos e Pix"]);')
 i = s.rindex('</script>')
 s = s[:i] + rd("config.js") + s[i:]
 rep('</style>', rd("alpha.css") + '</style>')
