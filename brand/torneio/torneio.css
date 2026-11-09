@@ -153,3 +153,11 @@
 .tr-ajud summary{display:flex;justify-content:space-between;align-items:center;cursor:pointer;list-style:none}
 .tr-ajud summary span{color:var(--muted);font-size:13px}
 .tr-ajud .chk em{margin-left:auto;color:var(--muted);font-style:normal;font-size:12px}
+/* torneio com lista de nomes (sem cartinhas) */
+.tr-nomecard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:58px;padding:8px 4px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);text-align:center}
+.tr-nomecard b{font-size:12px;line-height:1.15;font-weight:800;overflow-wrap:anywhere}
+.tr-nomecard i{font-style:normal;font-size:12px;color:var(--muted)}
+.tr-nomecard.gF{box-shadow:inset 0 3px 0 #e8197d}
+.tr-nomecard.gM{box-shadow:inset 0 3px 0 #2fbfa8}
+.tr-add{display:flex;flex-direction:column;gap:8px}
+.tr-add .seg{grid-template-columns:1fr 1fr!important}

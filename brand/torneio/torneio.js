@@ -24,11 +24,19 @@ const trRef=id=>doc(db,"times",teamId,"torneios",id);
 const trCur=()=>TR.lista.find(x=>x.id===TR.sel)||TR.lista[0]||null;
 const embaralha=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const eqDe=(t,id)=>(t.equipes||[]).find(e=>e.id===id);
-const forca=(e)=>e.ids.map(byId).filter(Boolean).reduce((s,p)=>s+ovr(p),0);
-const media=e=>{const ps=e.ids.map(byId).filter(Boolean);return ps.length?forca(e)/ps.length:0};
-const levanta=p=>p&&(p.pos==="LEV"||p.pos2==="LEV");
+/* torneio com lista própria de nomes (sem cartinhas): t.lista=true e t.atletas=[{id,nome,genero}] */
+const TRC=(typeof TR_CFG!=="undefined"&&TR_CFG)||{};
+let TRMAPA=null;
+function trMapa(t){TRMAPA=t&&t.lista?new Map((t.atletas||[]).map(a=>[a.id,{...a,lista:true}])):null}
+const trP=id=>TRMAPA?TRMAPA.get(id)||null:byId(id);
+const trOvr=p=>p&&!p.lista?ovr(p):0;
+const trCard=p=>p.lista?`<div class="tr-nomecard g${p.genero}"><b>${esc(p.nome)}</b><i>${p.genero==="F"?"♀":"♂"}</i></div>`:cardHTML(p,"mini");
+const forca=(e)=>e.ids.map(trP).filter(Boolean).reduce((s,p)=>s+trOvr(p),0);
+const media=e=>{const ps=e.ids.map(trP).filter(Boolean);return ps.length?forca(e)/ps.length:0};
+const levanta=p=>p&&!p.lista&&(p.pos==="LEV"||p.pos2==="LEV");
 const trLS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
-const minhaEq=t=>me?.carta?(t.equipes||[]).find(e=>e.ids.includes(me.carta)):null;
+const minhaEq=t=>{if(t?.lista){const n=semAcT(me?.nome);if(!n)return null;const a=(t.atletas||[]).find(x=>semAcT(x.nome)===n);return a?(t.equipes||[]).find(e=>e.ids.includes(a.id)):null}return me?.carta?(t.equipes||[]).find(e=>e.ids.includes(me.carta)):null};
+const semAcT=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
 const dataBR=d=>d?d.split("-").reverse().join("/"):"";
 const res=(t,j)=>(t.res||{})[j.id]||{sets:[],st:"ag"};
 const jogoDe=(t,id)=>(t.jogos||[]).find(j=>j.id===id);
@@ -69,7 +77,7 @@ EXTRA.reset.push(()=>{TR.sub=null;TR.ok=false;TR.lista=[];TR.sel=null;TR.ins=nul
 async function trSalva(t,patch,msg){Object.assign(t,patch);renderTr();
   try{await updateDoc(trRef(t.id),patch);if(msg)toast(msg)}catch(e){toast("Não consegui salvar: "+(e.code||e.message))}}
 
-function renderTr(){if(!me||!team||!trVe())return;renderHome();renderEquipes();renderJogos();renderTabela();renderOutros();renderPlacarJ()}
+function renderTr(){if(!me||!team||!trVe())return;trMapa(trCur());renderHome();renderEquipes();renderJogos();renderTabela();renderOutros();renderPlacarJ()}
 
 /* ---------- início ---------- */
 const PASSOS=[["inscricao","Inscrição"],["equipes","Equipes"],["grupos","Grupos"],["jogos","Jogos"],["mata","Mata-mata"],["fim","Campeão"]];
@@ -106,7 +114,7 @@ function renderHome(){const box=$("#trHome");if(!box)return;const t=trCur();
     let ter=c3?vencedor(t,c3):null;
     const pod=[[v,"2º","p2"],[c,"1º","p1"],[ter,"3º","p3"]].filter(x=>x[0]);
     campeao=`<div class="tr-camp"><span class="tr-kicker">Campeão</span><h2>${esc(nomeEq(t,c))}</h2>
-      <div class="tr-cards">${eqDe(t,c).ids.map(byId).filter(Boolean).map(p=>cardHTML(p,"mini")).join("")}</div>
+      <div class="tr-cards">${eqDe(t,c).ids.map(trP).filter(Boolean).map(trCard).join("")}</div>
       <div class="tr-pod">${pod.map(([id,n,cl])=>`<div class="${cl}"><b>${n}</b><span>${esc(nomeEq(t,id))}</span></div>`).join("")}</div></div>`}
   box.innerHTML=`<div class="tr-hero"><span class="tr-kicker">${dataBR(t.data)||"Torneio interno"} · ${(t.equipes||[]).length||"–"} equipes · ${t.quadras||1} quadra${(t.quadras||1)>1?"s":""}</span>
      <h2>${esc(t.nome||"Torneio")}</h2><p>${formatoTxt(t)}</p></div>
@@ -127,12 +135,14 @@ function formCriar(){const hoje=new Date();const d=`${hoje.getFullYear()}-${Stri
     <label class="chk"><input type="checkbox" id="tnMD3" checked><span>Semifinal e final em <b>melhor de 3 sets</b></span></label>
     <label class="chk"><input type="checkbox" id="tnTie"><span>3º set até 15 pontos</span></label>
     <label class="chk"><input type="checkbox" id="tnTer" checked><span>Disputa de 3º lugar</span></label>
+    <label class="chk"><input type="checkbox" id="tnCartas" ${TRC.lista?"":"checked"}><span>Usar as cartinhas dos atletas do time (desmarcado: lista de nomes própria do torneio, só homens e mulheres)</span></label>
     <p class="note">Todo set termina com 2 pontos de vantagem. Equipes de 4: 2 homens e 2 mulheres.</p>
     <div class="err" id="tnErr"></div><button class="btn primary" type="submit">Criar torneio</button></form>`}
 function ligaCriar(){const f=$("#trNovo");if(!f)return;f.onsubmit=async e=>{e.preventDefault();
   const nome=$("#tnNome").value.trim()||"Torneio";const b=f.querySelector("[type=submit]");b.disabled=true;
   try{const r=doc(collection(db,"times",teamId,"torneios"));
     await setDoc(r,{nome,data:$("#tnData").value,quadras:+$("#tnQ").value,pts:+$("#tnPts").value,ptsKO:+$("#tnPtsKO").value,setsKO:$("#tnMD3").checked?3:1,tie15:$("#tnTie").checked,terceiro:$("#tnTer").checked,
+      ...($("#tnCartas")?.checked?{}:{lista:true,atletas:(TRC.preset||[]).map((a,i)=>({id:"a"+(i+1),nome:a[0],genero:a[1]}))}),
       status:"inscricao",inscritos:[],equipes:[],reservas:[],grupos:[],jogos:[],res:{},criadoEm:serverTimestamp(),criadoPor:user?.uid||"app"});
     TR.sel=r.id;toast("Torneio criado");go("equipes")}catch(err){$("#tnErr").textContent="Não consegui criar: "+(err.code||err.message);b.disabled=false}}}
 $("#trHome").addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g)return go(g.dataset.go);
@@ -146,6 +156,23 @@ $("#trHome").addEventListener("click",e=>{const g=e.target.closest("[data-go]");
 function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
   if(!t){box.innerHTML=`<h2>Equipes</h2><div class="empty">Nenhum torneio criado.</div>`;return}
   const st=statusT(t);
+  if(st==="inscricao"&&trAcesso()&&t.lista){
+    const at=(t.atletas||[]).slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+    const M=at.filter(a=>a.genero==="M").length,F=at.length-M;
+    const jt=juntosDe(at.map(a=>a.id)),jm=jt?jt.filter(p=>p.genero==="M").length:0,jf=jt?jt.length-jm:0;
+    const nR=Math.min(Math.floor((M-jm)/2),Math.floor((F-jf)/2)),n=nR+(jt?1:0),sobra=(M-jm-2*nR)+(F-jf-2*nR);
+    const linha=a=>`<div class="chk tr-insc"><b>${esc(a.nome)}</b><button type="button" class="tr-tira" data-tiral="${a.id}" aria-label="Tirar ${esc(a.nome)}">×</button></div>`;
+    const grupo=(g,nome)=>{const l=at.filter(a=>a.genero===g);return `<div class="grouplabel">${nome} · ${l.length}</div><div class="box tr-ins">${l.map(linha).join("")||'<p class="note">Ninguém ainda.</p>'}</div>`};
+    box.innerHTML=`<div class="lg-head"><h2>Participantes</h2></div>
+      <p class="note">Lista própria deste torneio, sem cartinhas. O sorteio monta equipes com 2 homens e 2 mulheres.</p>
+      <div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
+      ${sobra>0&&n>0?`<p class="note">${sobra} ${sobra>1?"vão":"vai"} ficar de reserva (sorteado${sobra>1?"s":""}).</p>`:""}
+      <form class="box tr-add" id="trAddForm" novalidate><input type="text" id="trAddNome" maxlength="40" placeholder="Nome do participante" autocomplete="off">
+        <div class="seg lg-seg" id="trAddG"><button type="button" data-g="F" aria-pressed="${TR.addG!=="M"}">Mulher</button><button type="button" data-g="M" aria-pressed="${TR.addG==="M"}">Homem</button></div>
+        <button class="btn" type="submit">Adicionar</button></form>
+      ${grupo("F","Mulheres")}${grupo("M","Homens")}
+      <div class="tr-acao fixo"><button class="btn primary big" id="trSortEqL" type="button" ${n<2?"disabled":""}>${n<2?"Precisa de pelo menos 4 homens e 4 mulheres":`Sortear ${n} equipes`}</button></div>`;
+    return}
   if(st==="inscricao"&&trAcesso()){
     if(!TR.ins||TR.ins.t!==t.id)TR.ins={t:t.id,set:new Set(t.inscritos?.length?t.inscritos:players.filter(p=>p.presente).map(p=>p.id))};
     const sel=TR.ins.set;const ps=players.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
@@ -153,7 +180,7 @@ function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
     const jt=juntosDe([...sel]),jm=jt?jt.filter(p=>p.genero==="M").length:0,jf=jt?jt.length-jm:0;
     const nR=Math.min(Math.floor((M-jm)/2),Math.floor((F-jf)/2)),n=nR+(jt?1:0);
     const sobra=(M-jm-2*nR)+(F-jf-2*nR);
-    const lista=g=>ps.filter(p=>p.genero===g).map(p=>`<label class="chk"><input type="checkbox" data-ins="${p.id}" ${sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${ovr(p)}</em></label>`).join("")||'<p class="note">Ninguém.</p>';
+    const lista=g=>ps.filter(p=>p.genero===g).map(p=>`<label class="chk"><input type="checkbox" data-ins="${p.id}" ${sel.has(p.id)?"checked":""}><span class="av">${p.foto?`<img src="${p.foto}" alt="">`:esc(initials(p.nome))}</span><b>${esc(p.nome)}</b><em>${p.pos}${p.pos2?"/"+p.pos2:""} · ${trOvr(p)}</em></label>`).join("")||'<p class="note">Ninguém.</p>';
     box.innerHTML=`<div class="lg-head"><h2>Inscrição</h2><button class="btn ghost" id="trTodos" type="button">${ps.length&&ps.every(p=>sel.has(p.id))?"Desmarcar todos":"Marcar todos"}</button></div>
       <p class="note">Marque os atletas da Liga que vão jogar. Cada equipe tem 2 homens e 2 mulheres.</p>
       <div class="tr-conta"><div><b>${M}</b><span>homens</span></div><div><b>${F}</b><span>mulheres</span></div><div class="ok"><b>${n}</b><span>equipes</span></div></div>
@@ -167,17 +194,24 @@ function renderEquipes(){const box=$("#trEq");if(!box)return;const t=trCur();
   const fs=eqs.map(forca),dif=Math.max(...fs)-Math.min(...fs);const anim=Date.now()-TR.animEq<4000;const mexe=trAcesso()&&st==="equipes";
   const eu=minhaEq(t);
   box.innerHTML=`<div class="lg-head"><h2>Equipes</h2>${mexe?`<button class="btn ghost" id="trReEq" type="button">Sortear de novo</button>`:""}</div>
-    <div class="tr-equil"><span>Equilíbrio</span><b>${dif<=8?"Excelente":dif<=16?"Bom":"Regular"}</b><small>diferença de ${dif} pontos de força entre a mais forte e a mais fraca</small></div>
+    ${t.lista?"":`<div class="tr-equil"><span>Equilíbrio</span><b>${dif<=8?"Excelente":dif<=16?"Bom":"Regular"}</b><small>diferença de ${dif} pontos de força entre a mais forte e a mais fraca</small></div>`}
     ${mexe?`<p class="note">${TR.swap?"Agora toque em outro atleta do mesmo sexo para trocar.":"Toque num atleta e depois em outro do mesmo sexo para trocá-los de equipe. Toque no nome da equipe para renomear."}</p>`:""}
     <div class="tr-eqs">${eqs.map((e,i)=>`<div class="tr-equipe${anim?" revela":""}${eu&&eu.id===e.id?" minha":""}" style="--c:${e.cor};animation-delay:${i*.35}s">
-      <header><button type="button" class="tr-nome" data-ren="${e.id}" ${mexe?"":"disabled"}><i></i>${esc(e.nome)}</button><span class="tr-forca">Força <b>${media(e).toFixed(1)}</b></span></header>
-      <div class="tr-cards">${e.ids.map(id=>{const p=byId(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${cardHTML(p,"mini")}</div>`:""}).join("")}</div></div>`).join("")}</div>
-    ${(t.reservas||[]).length?`<div class="grouplabel">Reservas</div><div class="tr-cards res">${t.reservas.map(id=>{const p=byId(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${cardHTML(p,"mini")}</div>`:""}).join("")}</div>`:""}
+      <header><button type="button" class="tr-nome" data-ren="${e.id}" ${mexe?"":"disabled"}><i></i>${esc(e.nome)}</button>${t.lista?"":`<span class="tr-forca">Força <b>${media(e).toFixed(1)}</b></span>`}</header>
+      <div class="tr-cards">${e.ids.map(id=>{const p=trP(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${trCard(p)}</div>`:""}).join("")}</div></div>`).join("")}</div>
+    ${(t.reservas||[]).length?`<div class="grouplabel">Reservas</div><div class="tr-cards res">${t.reservas.map(id=>{const p=trP(id);return p?`<div class="tr-cw${TR.swap===id?" sel":""}" data-sw="${id}">${trCard(p)}</div>`:""}).join("")}</div>`:""}
     ${mexe?`<div class="tr-acao"><button class="btn ghost" id="trVoltaIns" type="button">Voltar à inscrição</button><button class="btn primary big" data-act2="grupos" type="button">Confirmar e sortear grupos</button></div>`:""}`}
+$("#trEq").addEventListener("submit",e=>{if(e.target.id!=="trAddForm")return;e.preventDefault();const t=trCur();if(!t||!trAcesso())return;
+  const nome=$("#trAddNome").value.trim();if(!nome)return;const g=TR.addG==="M"?"M":"F";
+  if((t.atletas||[]).some(a=>semAcT(a.nome)===semAcT(nome))){toast("Esse nome já está na lista");return}
+  const id="a"+Date.now().toString(36);trSalva(t,{atletas:(t.atletas||[]).concat([{id,nome,genero:g}])},nome+" adicionado")});
 $("#trEq").addEventListener("change",e=>{const c=e.target.closest("[data-ins]");if(!c||!TR.ins)return;c.checked?TR.ins.set.add(c.dataset.ins):TR.ins.set.delete(c.dataset.ins);renderEquipes()});
 $("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!trAcesso())return;
+  const gb=e.target.closest("#trAddG [data-g]");if(gb){TR.addG=gb.dataset.g;document.querySelectorAll("#trAddG button").forEach(b=>b.setAttribute("aria-pressed",b===gb));return}
+  const tl=e.target.closest("[data-tiral]");if(tl){const a=(t.atletas||[]).find(x=>x.id===tl.dataset.tiral);return trSalva(t,{atletas:(t.atletas||[]).filter(x=>x.id!==tl.dataset.tiral)},a?a.nome+" removido":"")}
+  if(e.target.closest("#trSortEqL"))return sortearEquipes(t,(t.atletas||[]).map(a=>a.id));
   if(e.target.closest("#trTodos")){const tudo=players.every(p=>TR.ins.set.has(p.id));players.forEach(p=>tudo?TR.ins.set.delete(p.id):TR.ins.set.add(p.id));return renderEquipes()}
-  if(e.target.closest("#trSortEq")||e.target.closest("#trReEq")){const ids=e.target.closest("#trSortEq")?[...TR.ins.set]:t.inscritos;return sortearEquipes(t,ids)}
+  if(e.target.closest("#trSortEq")||e.target.closest("#trReEq")){const ids=t.lista?(t.atletas||[]).map(a=>a.id):e.target.closest("#trSortEq")?[...TR.ins.set]:t.inscritos;return sortearEquipes(t,ids)}
   if(e.target.closest("#trVoltaIns"))return trSalva(t,{status:"inscricao",equipes:[],reservas:[]});
   if(e.target.closest("[data-act2=grupos]"))return abrirGrupos(t);
   const rn=e.target.closest("[data-ren]");if(rn){const eq=eqDe(t,rn.dataset.ren);return trAbrirSheet(`<h3>Nome da equipe</h3><label class="f">Nome<input type="text" id="trRenI" maxlength="24" value="${esc(eq.nome)}"></label>
@@ -185,30 +219,30 @@ $("#trEq").addEventListener("click",async e=>{const t=trCur();if(!t||!trAcesso()
       $("#trRenOk").onclick=()=>{const v=$("#trRenI").value.trim();if(!v)return;const eqs=t.equipes.map(x=>x.id===eq.id?{...x,nome:v}:x);trFecharSheet();trSalva(t,{equipes:eqs})}})}
   const sw=e.target.closest("[data-sw]");if(!sw||statusT(t)!=="equipes")return;const id=sw.dataset.sw;
   if(!TR.swap||TR.swap===id){TR.swap=TR.swap===id?null:id;return renderEquipes()}
-  const a=byId(TR.swap),b=byId(id);if(!a||!b||a.genero!==b.genero){toast("Troque atletas do mesmo sexo");TR.swap=id;return renderEquipes()}
+  const a=trP(TR.swap),b=trP(id);if(!a||!b||a.genero!==b.genero){toast("Troque atletas do mesmo sexo");TR.swap=id;return renderEquipes()}
   const troca=arr=>arr.map(x=>x===a.id?b.id:x===b.id?a.id:x);
   const eqs=t.equipes.map(x=>({...x,ids:troca(x.ids)}));const rs=troca(t.reservas||[]);TR.swap=null;trSalva(t,{equipes:eqs,reservas:rs},"Atletas trocados")});
 /* atletas que saem sempre na mesma equipe no sorteio (aparecem como sorteados normalmente) */
-const JUNTOS=["Leandrão","João Bombonato","Ligiane","Marcela Pignata"];
+const JUNTOS=TRC.juntos||[];
 const semAc=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-function juntosDe(ids){if(!JUNTOS.length)return null;const us=new Set(),out=[];const cand=ids.map(byId).filter(Boolean);
+function juntosDe(ids){if(!JUNTOS.length)return null;const us=new Set(),out=[];const cand=ids.map(trP).filter(Boolean);
   for(const nome of JUNTOS){const tk=semAc(nome).split(/\s+/);const livres=cand.filter(p=>!us.has(p.id));
-    let p=livres.find(p=>tk.every(w=>semAc(p.nome).includes(w)));
+    let p=livres.find(p=>semAc(p.nome)===semAc(nome))||livres.find(p=>tk.every(w=>semAc(p.nome).split(/[\s()]+/).includes(w)));
     if(!p){const um=livres.filter(p=>semAc(p.nome).split(/\s+/).includes(tk[0]));if(um.length===1)p=um[0]}
     if(!p)return null;us.add(p.id);out.push(p)}
   return out}
-async function sortearEquipes(t,ids){
-  const jt=juntosDe(ids);const ps=ids.map(byId).filter(Boolean).filter(p=>!jt||!jt.includes(p));let M=embaralha(ps.filter(p=>p.genero==="M")),F=embaralha(ps.filter(p=>p.genero==="F"));
+async function sortearEquipes(t,ids){trMapa(t);
+  const jt=juntosDe(ids);const ps=ids.map(trP).filter(Boolean).filter(p=>!jt||!jt.includes(p));let M=embaralha(ps.filter(p=>p.genero==="M")),F=embaralha(ps.filter(p=>p.genero==="F"));
   const n=Math.min(Math.floor(M.length/2),Math.floor(F.length/2));if(n+(jt?1:0)<2||n<1){toast("Precisa de pelo menos 4 homens e 4 mulheres");return}
   const resM=M.slice(2*n),resF=F.slice(2*n);M=M.slice(0,2*n);F=F.slice(0,2*n);
-  const rz=new Map(ps.map(p=>[p.id,ovr(p)+Math.random()*4]));
+  const rz=new Map(ps.map(p=>[p.id,trOvr(p)+Math.random()*4]));
   const T=Array.from({length:n},()=>[]);
   const cobra=(arr,inv)=>arr.sort((x,y)=>rz.get(y.id)-rz.get(x.id)).forEach((p,i)=>{const r=Math.floor(i/n),k=i%n;let idx=r%2===0?k:n-1-k;if(inv)idx=n-1-idx;T[idx].push(p)});
   cobra(M,false);cobra(F,true);
   const fix=jt?Math.floor(Math.random()*(n+1)):-1;if(jt)T.splice(fix,0,jt.slice());const nT=T.length;
-  const nLev=(jt||[]).concat(ps).filter(levanta).length;const craque=p=>ovr(p)>=90;
+  const nLev=(jt||[]).concat(ps).filter(levanta).length;const craque=p=>trOvr(p)>=90;
   // craques (over 90+) espalhados: no máximo um a mais numa equipe do que em outra
-  const custo=()=>{const s=T.map(e=>e.reduce((a,p)=>a+ovr(p),0));let c=Math.max(...s)-Math.min(...s);if(nLev>=nT)c+=12*T.filter(e=>!e.some(levanta)).length;
+  const custo=()=>{const s=T.map(e=>e.reduce((a,p)=>a+trOvr(p),0));let c=Math.max(...s)-Math.min(...s);if(nLev>=nT)c+=12*T.filter(e=>!e.some(levanta)).length;
     const k=T.map(e=>e.filter(craque).length);c+=25*Math.max(0,Math.max(...k)-Math.min(...k)-1)+25*(Math.max(...k)-Math.min(...k));return c};
   for(let it=0;it<300;it++){let best=null,bv=custo();
     for(let i=0;i<nT;i++)for(let j=i+1;j<nT;j++){if(i===fix||j===fix)continue;for(let a=0;a<4;a++)for(let b=0;b<4;b++){const pa=T[i][a],pb=T[j][b];if(!pa||!pb||pa.genero!==pb.genero)continue;
@@ -312,7 +346,7 @@ function renderPlacarJ(){const box=$("#trPlac");if(!box||!TR.jogo)return;const t
   const[sa,sb]=contaSets(t,j,sets);const need=Math.ceil(j.melhor/2);const acabou=sa>=need||sb>=need;
   const atual=sets.length&&!setFechado(t,j,sets.length-1,sets[sets.length-1])?sets.length-1:null;
   const cur=atual!=null?sets[atual]:(acabou&&sets.length?sets[sets.length-1]:[0,0]);const g=trAcesso()&&r.st!=="fim";const iSet=atual!=null?atual:sets.length;const alv=alvo(t,j,iSet);
-  const cards=e=>`<div class="tr-cards mini4">${e.ids.map(byId).filter(Boolean).map(p=>cardHTML(p,"mini")).join("")}</div>`;
+  const cards=e=>`<div class="tr-cards mini4">${e.ids.map(trP).filter(Boolean).map(trCard).join("")}</div>`;
   box.innerHTML=`<div class="row spread"><span class="tr-tag">${FASE[j.fase]}${j.fase==="G"?" "+j.g:""} · Quadra ${j.quadra}</span><button class="btn ghost" type="button" data-x>Fechar</button></div>
     <p class="note" style="margin:6px 0">${j.melhor>1?`Melhor de 3 · Set ${Math.min(iSet+1,3)} até ${alv}`:`1 set até ${alv}`} · vence com 2 de vantagem</p>
     <div class="tr-board">
@@ -354,7 +388,7 @@ function renderTabela(){const box=$("#trTab");if(!box)return;const t=trCur();
   if(TR.aba==="grupos"){const K=t.classif||2;const anim=Date.now()-TR.animGr<6000;let k=0;
     box.innerHTML=t.grupos.map(g=>{const L=classificacao(t,g);
       return `<div class="tr-grupo"><h3>Grupo ${g.nome}</h3><table class="tr-tab"><thead><tr><th>#</th><th>Equipe</th><th class="pts">Pts</th><th>J</th><th>V</th><th>D</th><th>Saldo</th><th>PP</th></tr></thead><tbody>
-      ${L.map((l,i)=>{const e=eqDe(t,l.id);return `<tr class="${i<K?"cl":""}${eu&&eu.id===l.id?" eu":""}${anim?" revela":""}" style="animation-delay:${(k++)*.45}s"><td>${i+1}</td><td><span class="tr-eq" style="--c:${e.cor}"><i></i>${esc(e.nome)}</span>${g.eq[0]===l.id?'<small class="cab">cabeça de chave</small>':""}</td><td class="pts">${l.P}</td><td>${l.J}</td><td>${l.V}</td><td>${l.D}</td><td>${l.PP-l.PC>0?"+":""}${l.PP-l.PC}</td><td>${l.PP}</td></tr>`}).join("")}</tbody></table></div>`}).join("")+
+      ${L.map((l,i)=>{const e=eqDe(t,l.id);return `<tr class="${i<K?"cl":""}${eu&&eu.id===l.id?" eu":""}${anim?" revela":""}" style="animation-delay:${(k++)*.45}s"><td>${i+1}</td><td><span class="tr-eq" style="--c:${e.cor}"><i></i>${esc(e.nome)}</span>${!t.lista&&g.eq[0]===l.id?'<small class="cab">cabeça de chave</small>':""}</td><td class="pts">${l.P}</td><td>${l.J}</td><td>${l.V}</td><td>${l.D}</td><td>${l.PP-l.PC>0?"+":""}${l.PP-l.PC}</td><td>${l.PP}</td></tr>`}).join("")}</tbody></table></div>`}).join("")+
       `<p class="note">Classificam ${K} por grupo (em verde). Vitória vale ${t.ptsVit??3} pontos. Desempate: vitórias, saldo de pontos, pontos feitos e confronto direto.</p>`;return}
   const ko=(t.jogos||[]).filter(j=>j.fase!=="G");
   if(!ko.length){box.innerHTML=`<div class="empty">O mata-mata é gerado quando terminar a fase de grupos.</div>`;return}

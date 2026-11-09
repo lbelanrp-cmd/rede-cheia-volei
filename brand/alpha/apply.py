@@ -35,7 +35,8 @@ rep('b.set(t,{nome,criadoPor:user.uid,criadoEm:serverTimestamp(),modo:6,', 'b.se
 rep('const trVe=()=>!!me;', 'const trVe=()=>!!me&&["presidente","vicepresidente"].includes(me.papel);')
 rep('const trCria=()=>!!me&&me.papel==="presidente";', 'const trCria=()=>!!me&&["presidente","vicepresidente"].includes(me.papel);')
 # torneio: só sorteio equilibrado (sem atletas que saem sempre juntos)
-s = re.sub(r'const JUNTOS=\[[^\]]*\];', 'const JUNTOS=[];', s, count=1)
+s = re.sub(r'const TR_CFG=\{.*?\};\n', 'const TR_CFG={};\n', s, count=1, flags=re.S)
+assert 'const TR_CFG={};' in s
 # treinos vêm da configuração do presidente (sem os treinos da Liga)
 rep('const fixos=team?.treinosFixos||FIXOS_PADRAO;', 'const fixos=team?.treinosFixos||[];')
 # Pix: sem chave da Liga; presidente cadastra
